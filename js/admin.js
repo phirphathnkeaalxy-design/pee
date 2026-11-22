@@ -36,7 +36,10 @@ function updateAdminWorkspaceHeader(subTab) {
     const meta = ADMIN_TAB_META[subTab] || ADMIN_TAB_META.analytics;
     const titleEl = document.getElementById('adm-workspace-title');
     const subEl = document.getElementById('adm-workspace-subtitle');
-    if (titleEl) titleEl.textContent = meta.title;
+    const titleText = subTab === 'products'
+        ? `จัดการสต็อกสินค้า (${(window.products || []).length} รายการ)`
+        : meta.title;
+    if (titleEl) titleEl.textContent = titleText;
     if (subEl) subEl.textContent = meta.subtitle;
 }
 
@@ -349,6 +352,8 @@ function renderAdminProductRow(productRecord) {
 }
 
 function renderAdminProductsTable() {
+    const allFilterEl = document.getElementById('adm-prod-filter-all');
+    if (allFilterEl) allFilterEl.textContent = `ทั้งหมด (${(window.products || []).length})`;
     const tbody = document.getElementById('admin-product-table-body');
     if (!tbody) return;
     const searchEl = document.getElementById('adm-product-search');
@@ -361,20 +366,69 @@ function renderAdminProductsTable() {
     tbody.innerHTML = filteredList.map(renderAdminProductRow).join('');
 }
 
+function setFieldVal(elementId, nextValue) {
+    const fieldEl = document.getElementById(elementId);
+    if (fieldEl) fieldEl.value = nextValue;
+}
+
+function getFieldVal(elementId, fallbackText) {
+    const fieldEl = document.getElementById(elementId);
+    if (!fieldEl || fieldEl.value === undefined || fieldEl.value === null) return fallbackText;
+    return String(fieldEl.value).trim();
+}
+
+function setProductModalMode(isCreateMode) {
+    const titleEl = document.getElementById('edit-modal-title');
+    const subEl = document.getElementById('edit-modal-subtitle');
+    const submitEl = document.getElementById('edit-modal-submit-btn');
+    if (titleEl) titleEl.textContent = isCreateMode ? 'เพิ่มสินค้าใหม่' : 'แก้ไขข้อมูลและสต็อกสินค้า';
+    if (subEl) subEl.textContent = isCreateMode ? 'กรอกรายละเอียด ราคา สต็อก และอัปโหลดรูปภาพสินค้าใหม่' : 'ปรับราคา จำนวนสต็อก หรืออัปโหลดรูปภาพสินค้าใหม่';
+    if (submitEl) submitEl.textContent = isCreateMode ? 'เพิ่มสินค้าเข้าระบบ' : 'บันทึกการเปลี่ยนแปลง';
+}
+
+function openAddProductModal() {
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return;
+    }
+    if (typeof discardStagedUpload === 'function') discardStagedUpload('product');
+    const fallbackImg = typeof getDefaultProductImage === 'function' ? getDefaultProductImage('') : '';
+    setFieldVal('edit-prod-id', '');
+    setFieldVal('edit-prod-name', '');
+    setFieldVal('edit-prod-type', 'jar');
+    setFieldVal('edit-prod-scent', '');
+    setFieldVal('edit-prod-desc', '');
+    setFieldVal('edit-prod-badge', 'สินค้าใหม่');
+    setFieldVal('edit-prod-price', '89');
+    setFieldVal('edit-prod-stock', '20');
+    setFieldVal('edit-prod-img-data', fallbackImg);
+    setFieldVal('edit-prod-img-file', '');
+    const previewEl = document.getElementById('edit-prod-img-preview');
+    if (previewEl) previewEl.src = fallbackImg;
+    setProductModalMode(true);
+    document.getElementById('admin-edit-modal').classList.remove('hidden');
+}
+
 function openEditModal(prodId) {
     if (typeof discardStagedUpload === 'function') discardStagedUpload('product');
     const productRecord = window.products.find(entry => entry.id === prodId);
     if (!productRecord) return;
     const safeImg = sanitizeImageUrl(productRecord.img);
 
-    document.getElementById('edit-prod-id').value = productRecord.id;
-    document.getElementById('edit-prod-name').value = productRecord.name;
-    document.getElementById('edit-prod-price').value = productRecord.price;
-    document.getElementById('edit-prod-stock').value = productRecord.stock;
-    document.getElementById('edit-prod-img-data').value = safeImg;
-    document.getElementById('edit-prod-img-preview').src = safeImg;
-    document.getElementById('edit-prod-img-file').value = '';
+    setFieldVal('edit-prod-id', productRecord.id);
+    setFieldVal('edit-prod-name', productRecord.name);
+    setFieldVal('edit-prod-type', productRecord.type === 'stick' ? 'stick' : 'jar');
+    setFieldVal('edit-prod-scent', productRecord.scent || '');
+    setFieldVal('edit-prod-desc', productRecord.desc || '');
+    setFieldVal('edit-prod-badge', productRecord.badgeText || '');
+    setFieldVal('edit-prod-price', productRecord.price);
+    setFieldVal('edit-prod-stock', productRecord.stock);
+    setFieldVal('edit-prod-img-data', safeImg);
+    setFieldVal('edit-prod-img-file', '');
+    const previewEl = document.getElementById('edit-prod-img-preview');
+    if (previewEl) previewEl.src = safeImg;
 
+    setProductModalMode(false);
     document.getElementById('admin-edit-modal').classList.remove('hidden');
 }
 
@@ -389,51 +443,112 @@ function validateProductInput(updatedName, parsedPrice, parsedStock) {
     return Number.isInteger(parsedStock) && parsedStock >= 0;
 }
 
-function saveProductEdit(submitEvent) {
-    if (submitEvent) submitEvent.preventDefault();
-    const prodId = document.getElementById('edit-prod-id').value;
-    const productRecord = window.products.find(entry => entry.id === prodId);
-    if (!productRecord) return;
+function readProductFormFields() {
+    const rawType = getFieldVal('edit-prod-type', 'jar');
+    return {
+        prodId: getFieldVal('edit-prod-id', ''),
+        prodName: getFieldVal('edit-prod-name', ''),
+        prodType: rawType === 'stick' ? 'stick' : 'jar',
+        scentText: getFieldVal('edit-prod-scent', ''),
+        descText: getFieldVal('edit-prod-desc', ''),
+        badgeText: getFieldVal('edit-prod-badge', ''),
+        parsedPrice: Number(getFieldVal('edit-prod-price', '0')),
+        parsedStock: Number(getFieldVal('edit-prod-stock', '-1')),
+        imgUrl: sanitizeImageUrl(getFieldVal('edit-prod-img-data', ''))
+    };
+}
 
-    const updatedName = document.getElementById('edit-prod-name').value.trim();
-    const parsedPrice = Number(document.getElementById('edit-prod-price').value);
-    const parsedStock = Number(document.getElementById('edit-prod-stock').value);
-
-    if (!validateProductInput(updatedName, parsedPrice, parsedStock)) {
-        showToast('กรุณากรอกชื่อ ราคา (ตั้งแต่ 1 บาท) และสต็อก (จำนวนเต็มตั้งแต่ 0) ให้ถูกต้อง', 'error');
-        return;
+function persistAndRefreshProductCatalog(prevImgUrl, nextImgUrl) {
+    if (!safeStorageSet('soulin_products', JSON.stringify(window.products))) return false;
+    if (typeof window.syncProductsToCloud === 'function') {
+        window.syncProductsToCloud(window.products);
     }
+    if (typeof commitStagedUpload === 'function') {
+        commitStagedUpload('product', prevImgUrl, nextImgUrl);
+    }
+    refreshAfterProductChange();
+    return true;
+}
 
+function createNewProductRecord(formFields) {
+    const randSuffix = Math.random().toString(36).slice(2, 5);
+    const createdId = `${formFields.prodType}-${Date.now().toString(36)}-${randSuffix}`;
+    const fallbackImg = typeof getDefaultProductImage === 'function' ? getDefaultProductImage('') : '';
+    const nextRecord = {
+        id: createdId,
+        name: formFields.prodName,
+        scent: formFields.scentText || 'สมุนไพรธรรมชาติ',
+        desc: formFields.descText || 'สูตรสมุนไพรธรรมชาติจาก SOULIN',
+        type: formFields.prodType,
+        price: formFields.parsedPrice,
+        stock: formFields.parsedStock,
+        iconClass: formFields.prodType === 'stick' ? 'fa-wand-magic-sparkles' : 'fa-jar',
+        badgeText: formFields.badgeText,
+        img: formFields.imgUrl || fallbackImg
+    };
+    window.products.push(nextRecord);
+    if (!persistAndRefreshProductCatalog('', nextRecord.img)) return;
+    updateAdminWorkspaceHeader('products');
+    emitAdminAudit(
+        'stock',
+        'PRODUCT_CREATED',
+        createdId,
+        `เพิ่มสินค้าใหม่ "${nextRecord.name}" (${nextRecord.price} ฿ / สต็อก ${nextRecord.stock} ชิ้น)`,
+        'info',
+        { product: nextRecord }
+    );
+    closeEditModal();
+    showToast(`เพิ่มสินค้า "${nextRecord.name}" เข้าระบบเรียบร้อยแล้ว`, 'success');
+}
+
+function updateExistingProductRecord(productRecord, formFields) {
     const beforeSnapshot = {
         name: productRecord.name,
         price: productRecord.price,
         stock: productRecord.stock
     };
     const previousProductImg = productRecord.img;
-    productRecord.name = updatedName;
-    productRecord.price = parsedPrice;
-    productRecord.stock = parsedStock;
-    const updatedImg = sanitizeImageUrl(document.getElementById('edit-prod-img-data').value);
-    if (updatedImg) productRecord.img = updatedImg;
+    productRecord.name = formFields.prodName;
+    productRecord.type = formFields.prodType;
+    productRecord.iconClass = formFields.prodType === 'stick' ? 'fa-wand-magic-sparkles' : 'fa-jar';
+    productRecord.scent = formFields.scentText;
+    productRecord.desc = formFields.descText;
+    productRecord.badgeText = formFields.badgeText;
+    productRecord.price = formFields.parsedPrice;
+    productRecord.stock = formFields.parsedStock;
+    if (formFields.imgUrl) productRecord.img = formFields.imgUrl;
 
-    if (!safeStorageSet('soulin_products', JSON.stringify(window.products))) return;
-    if (typeof window.syncProductsToCloud === 'function') {
-        window.syncProductsToCloud(window.products);
-    }
-    if (typeof commitStagedUpload === 'function') {
-        commitStagedUpload('product', previousProductImg, productRecord.img);
-    }
-    refreshAfterProductChange();
+    if (!persistAndRefreshProductCatalog(previousProductImg, productRecord.img)) return;
     emitAdminAudit(
         'stock',
         'PRODUCT_UPDATED',
-        prodId,
-        `อัปเดตสินค้า "${productRecord.name}" (${beforeSnapshot.price} -> ${parsedPrice} ฿ / สต็อก ${beforeSnapshot.stock} -> ${parsedStock} ชิ้น)`,
+        productRecord.id,
+        `อัปเดตสินค้า "${productRecord.name}" (${beforeSnapshot.price} -> ${formFields.parsedPrice} ฿ / สต็อก ${beforeSnapshot.stock} -> ${formFields.parsedStock} ชิ้น)`,
         'info',
-        { before: beforeSnapshot, after: { name: productRecord.name, price: parsedPrice, stock: parsedStock } }
+        { before: beforeSnapshot, after: { name: productRecord.name, price: formFields.parsedPrice, stock: formFields.parsedStock } }
     );
     closeEditModal();
     showToast('อัปเดตและบันทึกรูปภาพสินค้าลงระบบเรียบร้อยแล้ว', 'success');
+}
+
+function saveProductEdit(submitEvent) {
+    if (submitEvent) submitEvent.preventDefault();
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return;
+    }
+    const formFields = readProductFormFields();
+    if (!validateProductInput(formFields.prodName, formFields.parsedPrice, formFields.parsedStock)) {
+        showToast('กรุณากรอกชื่อ ราคา (ตั้งแต่ 1 บาท) และสต็อก (จำนวนเต็มตั้งแต่ 0) ให้ถูกต้อง', 'error');
+        return;
+    }
+    if (!formFields.prodId) {
+        createNewProductRecord(formFields);
+        return;
+    }
+    const productRecord = window.products.find(entry => entry.id === formFields.prodId);
+    if (!productRecord) return;
+    updateExistingProductRecord(productRecord, formFields);
 }
 
 function resetDefaultStock() {
