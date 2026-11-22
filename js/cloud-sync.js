@@ -480,12 +480,23 @@ async function syncAuditLogViaSupabase(sbClient, logEntry) {
     if (syncErr) console.error('Supabase audit log insert failed:', syncErr);
 }
 
+async function deleteProductViaSupabase(sbClient, prodId) {
+    if (!(await checkSupabaseAdminSession(sbClient)) || !prodId) return false;
+    const { error: delErr } = await sbClient
+        .from('soulin_products')
+        .delete()
+        .eq('id', prodId);
+    if (delErr) console.error('Supabase product delete failed:', delErr);
+    return !delErr;
+}
+
 function registerSupabaseSaveHelpers(sbClient) {
     window.hasValidSupabaseAdminSession = () => checkSupabaseAdminSession(sbClient);
     window.signInAdminWithSupabase = signInAdminWithSupabase;
     window.signOutSupabaseAuth = () => performSupabaseSignOut(sbClient);
     window.syncOrderToCloud = (orderRecord) => syncOrderViaSupabase(sbClient, orderRecord);
     window.syncProductsToCloud = (productsList) => syncProductsViaSupabase(sbClient, productsList);
+    window.deleteProductFromCloud = (prodId) => deleteProductViaSupabase(sbClient, prodId);
     window.syncCMSToCloud = (cmsSettings) => syncCmsViaSupabase(sbClient, cmsSettings);
     window.syncAuditLogToCloud = (logEntry) => syncAuditLogViaSupabase(sbClient, logEntry);
     window.refreshSupabaseAuditLogs = () => hydrateSupabaseAuditLogs(sbClient);

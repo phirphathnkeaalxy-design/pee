@@ -345,6 +345,7 @@ function renderAdminProductRow(productRecord) {
                     <button type="button" onclick="quickAdjustStock('${safeId}', -1)" title="ลด 1 ชิ้น" class="bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 px-2 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 transition-all">-1</button>
                     <button type="button" onclick="quickAdjustStock('${safeId}', 5)" title="เพิ่ม 5 ชิ้น" class="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white px-2 py-1.5 rounded-lg text-xs font-semibold border border-emerald-200 transition-all">+5</button>
                     <button type="button" onclick="openEditModal('${safeId}')" class="bg-amber-50 text-amber-800 hover:bg-amber-100 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-200 transition-all"><i class="fa-solid fa-pen mr-1"></i>แก้ไข</button>
+                    <button type="button" onclick="openDeleteProductConfirm('${safeId}')" title="ลบสินค้า" class="bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rose-200 transition-all"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </td>
         </tr>
@@ -549,6 +550,99 @@ function saveProductEdit(submitEvent) {
     const productRecord = window.products.find(entry => entry.id === formFields.prodId);
     if (!productRecord) return;
     updateExistingProductRecord(productRecord, formFields);
+}
+
+function ensureDeleteProductModal() {
+    let modalEl = document.getElementById('admin-delete-product-modal');
+    if (modalEl) return modalEl;
+    modalEl = document.createElement('div');
+    modalEl.id = 'admin-delete-product-modal';
+    modalEl.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4';
+    document.body.appendChild(modalEl);
+    return modalEl;
+}
+
+function closeDeleteProductConfirm() {
+    const modalEl = document.getElementById('admin-delete-product-modal');
+    if (modalEl) modalEl.classList.add('hidden');
+}
+
+function buildDeleteProductModalHtml(productRecord) {
+    const safeId = escapeHtml(productRecord.id);
+    const safeName = escapeHtml(productRecord.name);
+    return `
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 smooth-shadow border border-rose-100 space-y-5">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center text-lg flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="min-w-0">
+                    <h3 class="text-base font-bold text-soulin-dark">ยืนยันการลบสินค้า</h3>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                        ต้องการลบ <strong class="text-slate-800">"${safeName}"</strong> ออกจากรายการสินค้าและคลาวด์ใช่หรือไม่? การลบไม่สามารถกู้คืนได้
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-2.5 pt-1">
+                <button type="button" onclick="closeDeleteProductConfirm()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-xs transition-all">
+                    ยกเลิก
+                </button>
+                <button type="button" onclick="confirmDeleteProduct('${safeId}')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-xl shadow-sm text-xs transition-all inline-flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> ยืนยันการลบ
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function openDeleteProductConfirm(prodId) {
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return;
+    }
+    const productRecord = (window.products || []).find(entry => entry.id === prodId);
+    if (!productRecord) return;
+    const modalEl = ensureDeleteProductModal();
+    modalEl.innerHTML = buildDeleteProductModalHtml(productRecord);
+    modalEl.classList.remove('hidden');
+}
+
+function cleanupDeletedProductFromCart(prodId) {
+    if (!window.cart || !Object.prototype.hasOwnProperty.call(window.cart, prodId)) {
+        return;
+    }
+    delete window.cart[prodId];
+    safeStorageSet('soulin_cart', JSON.stringify(window.cart));
+    if (typeof updateCartBadge === 'function') updateCartBadge();
+}
+
+function syncDeletedProductToCloud(prodId, imageUrl) {
+    if (typeof window.deleteProductFromCloud === 'function') {
+        window.deleteProductFromCloud(prodId);
+    }
+    if (typeof window.deleteImageFromCloud === 'function' && imageUrl) {
+        window.deleteImageFromCloud(imageUrl);
+    }
+}
+
+function confirmDeleteProduct(prodId) {
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return false;
+    }
+    const catalog = window.products || [];
+    const targetIdx = catalog.findIndex(entry => entry.id === prodId);
+    if (targetIdx === -1) return false;
+    const [removedRecord] = catalog.splice(targetIdx, 1);
+    if (!safeStorageSet('soulin_products', JSON.stringify(catalog))) return false;
+    cleanupDeletedProductFromCart(prodId);
+    syncDeletedProductToCloud(prodId, removedRecord.img);
+    refreshAfterProductChange();
+    updateAdminWorkspaceHeader('products');
+    emitAdminAudit('stock', 'PRODUCT_DELETED', prodId, `ลบสินค้า "${removedRecord.name}" ออกจากระบบแล้ว`, 'warning');
+    closeDeleteProductConfirm();
+    showToast(`ลบสินค้า "${removedRecord.name}" เรียบร้อยแล้ว`, 'info');
+    return true;
 }
 
 function resetDefaultStock() {
