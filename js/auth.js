@@ -14,12 +14,7 @@ const SHA256_INIT = [
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ];
 
-const ADMIN_USERNAME = 'adminsoulin';
-const ADMIN_PASSWORD_HASHES = [
-    '9953ec9950a30867a4d602f01f00200cdec0301a2fc5a92bbc7269b36d62bb9e',
-    '1e571467c4ceeddc1e80165e2408985e0f773419c19204a5acf64689f80d42ba',
-    'd73f2572382256e5eb9a5ba31b4879164f600f2033fdc5df4c203672000ffbe9'
-];
+const RESERVED_CUSTOMER_USERNAMES = ['admin', 'adminsoulin', 'administrator', 'root', 'system'];
 const ALLOWED_REDIRECT_TABS = ['home', 'products', 'cart', 'orders', 'admin', 'member'];
 
 function rightRotate(word, shift) {
@@ -147,15 +142,12 @@ function verifyUserCredentials(usernameInput, passwordInput) {
         return { ok: false, message: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' };
     }
     const enteredHash = hashSecret(cleanPass);
-    if (cleanUser === ADMIN_USERNAME && ADMIN_PASSWORD_HASHES.includes(enteredHash)) {
-        return {
-            ok: true,
-            user: { username: cleanUser, role: 'admin', name: 'ผู้ดูแลระบบ (Admin)' }
-        };
-    }
     const matchedUser = authenticateCustomer(cleanUser, cleanPass, enteredHash);
     if (!matchedUser) {
-        return { ok: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+        const message = RESERVED_CUSTOMER_USERNAMES.includes(cleanUser.toLowerCase())
+            ? 'บัญชีผู้ดูแลระบบกรุณาเข้าสู่ระบบผ่านหน้า /admin-login.html'
+            : 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+        return { ok: false, message };
     }
     return {
         ok: true,
@@ -169,29 +161,10 @@ function verifyUserCredentials(usernameInput, passwordInput) {
     };
 }
 
-function verifyAdminCredentials(usernameInput, passwordInput) {
-    const cleanUser = String(usernameInput || '').trim();
-    const cleanPass = String(passwordInput || '').trim();
-    if (!cleanUser || !cleanPass) {
-        return { ok: false, message: 'กรุณากรอกชื่อผู้ใช้แอดมินและรหัสผ่าน' };
-    }
-    const enteredHash = hashSecret(cleanPass);
-    if (cleanUser === ADMIN_USERNAME && ADMIN_PASSWORD_HASHES.includes(enteredHash)) {
-        return {
-            ok: true,
-            user: { username: cleanUser, role: 'admin', name: 'ผู้ดูแลระบบ (Admin)' }
-        };
-    }
-    if (authenticateCustomer(cleanUser, cleanPass, enteredHash)) {
-        return { ok: false, message: 'บัญชีนี้เป็นบัญชีลูกค้า ไม่มีสิทธิ์เข้าสู่ระบบแอดมิน' };
-    }
-    return { ok: false, message: 'ชื่อผู้ใช้แอดมินหรือรหัสผ่านไม่ถูกต้อง' };
-}
-
 function validateCustomerRegistration(cleanName, cleanUser, cleanPass, cleanPhone) {
     if (!cleanName) return 'กรุณากรอกชื่อ-นามสกุล';
     if (cleanUser.length < 3) return 'ชื่อผู้ใช้งานต้องมีอย่างน้อย 3 ตัวอักษร';
-    if (cleanUser.toLowerCase() === ADMIN_USERNAME) return 'ไม่สามารถใช้ชื่อผู้ใช้นี้ได้';
+    if (RESERVED_CUSTOMER_USERNAMES.includes(cleanUser.toLowerCase())) return 'ไม่สามารถใช้ชื่อผู้ใช้นี้ได้';
     if (cleanPass.length < 6) return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
     if (cleanPhone && !/^[0-9]{9,10}$/.test(cleanPhone)) {
         return 'กรุณากรอกเบอร์โทรศัพท์ 9-10 หลักให้ถูกต้อง';
@@ -298,8 +271,9 @@ function updateCustomerProfile(username, profileUpdates) {
 }
 
 function changeCustomerPassword(username, currentPassword, nextPassword) {
-    if (username === ADMIN_USERNAME) {
-        return { ok: false, message: 'บัญชีแอดมินเริ่มต้นไม่สามารถเปลี่ยนรหัสผ่านจากหน้านี้ได้' };
+    const isProtectedRole = window.currentUser && window.currentUser.role === 'admin';
+    if (isProtectedRole || RESERVED_CUSTOMER_USERNAMES.includes(String(username || '').toLowerCase())) {
+        return { ok: false, message: 'บัญชีผู้ดูแลระบบกรุณาเปลี่ยนรหัสผ่านผ่าน Supabase Auth' };
     }
     const cleanCurrent = String(currentPassword || '').trim();
     const cleanNext = String(nextPassword || '').trim();
@@ -466,6 +440,9 @@ function adminLogout() {
             summary: `ผู้ดูแลระบบ "${window.currentUser.username}" ออกจากระบบจากหน้า Backoffice`,
             severity: 'info'
         });
+    }
+    if (typeof window.signOutSupabaseAuth === 'function') {
+        window.signOutSupabaseAuth();
     }
     logout();
 }

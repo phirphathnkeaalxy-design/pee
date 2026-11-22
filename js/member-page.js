@@ -432,7 +432,7 @@ function handleMemberDeleteAddress(addressId) {
 
 function renderSecurityPanelAccess() {
     if (!window.currentUser) return;
-    const isBuiltInAdmin = window.currentUser.username === ADMIN_USERNAME;
+    const isBuiltInAdmin = window.currentUser.role === 'admin';
     const isGoogleAccount = window.currentUser.authProvider === 'google';
     const adminNote = document.getElementById('member-admin-password-note');
     const googleNote = document.getElementById('member-google-password-note');

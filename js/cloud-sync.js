@@ -266,7 +266,128 @@ async function hydrateSupabaseProducts(sbClient) {
     return true;
 }
 
+function resolveSupabaseClient(explicitClient) {
+    if (explicitClient) return explicitClient;
+    return typeof window !== 'undefined' ? window.soulinSupabaseClient || null : null;
+}
+
+function isSupabaseAuthReady(activeClient) {
+    return Boolean(
+        activeClient
+        && activeClient.auth
+        && typeof activeClient.auth.signInWithPassword === 'function'
+    );
+}
+
+async function fetchCurrentSupabaseSessionUser(activeClient) {
+    if (!activeClient || !activeClient.auth || typeof activeClient.auth.getSession !== 'function') {
+        return null;
+    }
+    try {
+        const { data: sessionBox, error: sessionErr } = await activeClient.auth.getSession();
+        if (sessionErr || !sessionBox || !sessionBox.session) return null;
+        return sessionBox.session.user || null;
+    } catch (sessReadErr) {
+        console.error('Supabase session read failed:', sessReadErr);
+        return null;
+    }
+}
+
+async function checkSupabaseAdminSession(explicitClient) {
+    const activeClient = resolveSupabaseClient(explicitClient);
+    const authUser = await fetchCurrentSupabaseSessionUser(activeClient);
+    if (!authUser || typeof activeClient.rpc !== 'function') return false;
+    try {
+        const { data: adminFlag, error: rpcErr } = await activeClient.rpc('is_soulin_admin');
+        return Boolean(!rpcErr && adminFlag === true);
+    } catch (adminRpcErr) {
+        console.error('Supabase admin check failed:', adminRpcErr);
+        return false;
+    }
+}
+
+async function performSupabaseSignOut(explicitClient) {
+    const activeClient = resolveSupabaseClient(explicitClient);
+    if (!activeClient || !activeClient.auth || typeof activeClient.auth.signOut !== 'function') {
+        return;
+    }
+    try {
+        await activeClient.auth.signOut();
+    } catch (signOutErr) {
+        console.error('Supabase sign-out failed:', signOutErr);
+    }
+}
+
+async function signInAdminWithSupabase(adminEmail, adminPassword) {
+    const cleanEmail = String(adminEmail || '').trim().toLowerCase();
+    const cleanPass = String(adminPassword || '').trim();
+    if (!cleanEmail || !cleanPass) {
+        return { ok: false, message: 'กรุณากรอกอีเมลแอดมินและรหัสผ่าน' };
+    }
+    const activeClient = resolveSupabaseClient();
+    if (!isSupabaseAuthReady(activeClient)) {
+        return { ok: false, message: 'ระบบยืนยันตัวตน Supabase ยังไม่พร้อมใช้งาน' };
+    }
+    const { data: signInBox, error: signInErr } = await activeClient.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPass
+    });
+    if (signInErr || !signInBox || !signInBox.user) {
+        if (signInErr) console.error('Supabase admin sign-in error:', signInErr);
+        return { ok: false, message: 'อีเมลแอดมินหรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    const adminAllowed = await checkSupabaseAdminSession(activeClient);
+    if (!adminAllowed) {
+        await performSupabaseSignOut(activeClient);
+        return { ok: false, message: 'บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ SOULIN' };
+    }
+    const verifiedEmail = signInBox.user.email || cleanEmail;
+    return {
+        ok: true,
+        user: {
+            username: verifiedEmail,
+            email: verifiedEmail,
+            role: 'admin',
+            name: 'ผู้ดูแลระบบ (Admin)',
+            authProvider: 'supabase'
+        }
+    };
+}
+
+function enforceValidAdminUiSession(isAdminSession) {
+    if (isAdminSession || !window.currentUser || window.currentUser.role !== 'admin') {
+        return;
+    }
+    window.currentUser = null;
+    localStorage.removeItem('soulin_user');
+    invokeGlobalUiHooks(['renderAuthUI']);
+    const onAdminTab = typeof getInitialTabFromQuery === 'function' && getInitialTabFromQuery() === 'admin';
+    if (onAdminTab && typeof window !== 'undefined' && window.location) {
+        window.location.href = './admin-login.html';
+    }
+}
+
+function mapOrderToRpcParams(orderRecord) {
+    const rawItems = Array.isArray(orderRecord.items) ? orderRecord.items : [];
+    const rpcItems = rawItems.map(entry => ({ id: entry.id, qty: Number(entry.qty) || 1 }));
+    return {
+        p_order_id: orderRecord.orderId,
+        p_timestamp_ms: Number(orderRecord.timestamp) || Date.now(),
+        p_username: textOr(orderRecord.user, 'guest'),
+        p_customer_name: textOr(orderRecord.customerName, 'ลูกค้า'),
+        p_items: rpcItems,
+        p_address: textOr(orderRecord.address, '-'),
+        p_shipping_details: orderRecord.shippingDetails || null,
+        p_order_date_text: textOr(orderRecord.date),
+        p_payment_method: textOr(orderRecord.paymentMethod, 'promptpay'),
+        p_payment_slip_url: textOr(orderRecord.paymentSlipUrl),
+        p_payment_reference: textOr(orderRecord.paymentReference),
+        p_payment_gateway: textOr(orderRecord.paymentGateway, 'manual')
+    };
+}
+
 async function hydrateSupabaseOrders(sbClient) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return false;
     const { data: fetchedRows, error: queryErr } = await sbClient
         .from('soulin_orders')
         .select('*')
@@ -302,6 +423,7 @@ async function hydrateSupabaseCms(sbClient) {
 }
 
 async function hydrateSupabaseAuditLogs(sbClient) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return false;
     const { data: fetchedRows, error: queryErr } = await sbClient
         .from('soulin_audit_logs')
         .select('*')
@@ -317,48 +439,70 @@ async function hydrateSupabaseAuditLogs(sbClient) {
     return true;
 }
 
-function registerSupabaseSaveHelpers(sbClient) {
-    window.syncOrderToCloud = async (orderRecord) => {
+async function syncOrderViaSupabase(sbClient, orderRecord) {
+    if (await checkSupabaseAdminSession(sbClient)) {
         const { error: syncErr } = await sbClient
             .from('soulin_orders')
             .upsert(mapOrderToSupabaseRow(orderRecord), { onConflict: 'order_id' });
         if (syncErr) console.error('Supabase order upsert failed:', syncErr);
-    };
+        return;
+    }
+    if (typeof sbClient.rpc !== 'function') return;
+    const { error: rpcErr } = await sbClient.rpc('place_soulin_order', mapOrderToRpcParams(orderRecord));
+    if (rpcErr) {
+        console.error('Supabase order RPC failed:', rpcErr);
+        return;
+    }
+    await hydrateSupabaseProducts(sbClient);
+}
 
-    window.syncProductsToCloud = async (productsList) => {
-        const rowsToSave = (productsList || []).map((entry, idx) => mapProductToSupabaseRow(entry, idx + 1));
-        const { error: syncErr } = await sbClient
-            .from('soulin_products')
-            .upsert(rowsToSave, { onConflict: 'id' });
-        if (syncErr) console.error('Supabase products upsert failed:', syncErr);
-    };
+async function syncProductsViaSupabase(sbClient, productsList) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return;
+    const rowsToSave = (productsList || []).map((entry, idx) => mapProductToSupabaseRow(entry, idx + 1));
+    const { error: syncErr } = await sbClient
+        .from('soulin_products')
+        .upsert(rowsToSave, { onConflict: 'id' });
+    if (syncErr) console.error('Supabase products upsert failed:', syncErr);
+}
 
-    window.syncCMSToCloud = async (cmsSettings) => {
-        const { error: syncErr } = await sbClient
-            .from('soulin_cms')
-            .upsert(mapCmsToSupabaseRow(cmsSettings), { onConflict: 'id' });
-        if (syncErr) console.error('Supabase CMS upsert failed:', syncErr);
-    };
+async function syncCmsViaSupabase(sbClient, cmsSettings) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return;
+    const { error: syncErr } = await sbClient
+        .from('soulin_cms')
+        .upsert(mapCmsToSupabaseRow(cmsSettings), { onConflict: 'id' });
+    if (syncErr) console.error('Supabase CMS upsert failed:', syncErr);
+}
 
-    window.syncAuditLogToCloud = async (logEntry) => {
-        const { error: syncErr } = await sbClient
-            .from('soulin_audit_logs')
-            .insert(mapAuditLogToSupabaseRow(logEntry));
-        if (syncErr) console.error('Supabase audit log insert failed:', syncErr);
-    };
+async function syncAuditLogViaSupabase(sbClient, logEntry) {
+    const { error: syncErr } = await sbClient
+        .from('soulin_audit_logs')
+        .insert(mapAuditLogToSupabaseRow(logEntry));
+    if (syncErr) console.error('Supabase audit log insert failed:', syncErr);
+}
 
+function registerSupabaseSaveHelpers(sbClient) {
+    window.hasValidSupabaseAdminSession = () => checkSupabaseAdminSession(sbClient);
+    window.signInAdminWithSupabase = signInAdminWithSupabase;
+    window.signOutSupabaseAuth = () => performSupabaseSignOut(sbClient);
+    window.syncOrderToCloud = (orderRecord) => syncOrderViaSupabase(sbClient, orderRecord);
+    window.syncProductsToCloud = (productsList) => syncProductsViaSupabase(sbClient, productsList);
+    window.syncCMSToCloud = (cmsSettings) => syncCmsViaSupabase(sbClient, cmsSettings);
+    window.syncAuditLogToCloud = (logEntry) => syncAuditLogViaSupabase(sbClient, logEntry);
     window.refreshSupabaseAuditLogs = () => hydrateSupabaseAuditLogs(sbClient);
 }
 
-function subscribeSupabaseRealtime(sbClient) {
+function subscribeSupabaseRealtime(sbClient, isAdminSession) {
     if (typeof sbClient.channel !== 'function') return null;
-    return sbClient
+    const channelBuilder = sbClient
         .channel('soulin-live-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_orders' }, () => hydrateSupabaseOrders(sbClient))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_products' }, () => hydrateSupabaseProducts(sbClient))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_cms' }, () => hydrateSupabaseCms(sbClient))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_audit_logs' }, () => hydrateSupabaseAuditLogs(sbClient))
-        .subscribe();
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_cms' }, () => hydrateSupabaseCms(sbClient));
+    if (isAdminSession) {
+        channelBuilder
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_orders' }, () => hydrateSupabaseOrders(sbClient))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'soulin_audit_logs' }, () => hydrateSupabaseAuditLogs(sbClient));
+    }
+    return channelBuilder.subscribe();
 }
 
 async function initSupabaseCloud(sbSettings) {
@@ -367,14 +511,15 @@ async function initSupabaseCloud(sbSettings) {
         const sbClient = window.supabase.createClient(sbSettings.url, sbSettings.publishableKey);
         window.soulinSupabaseClient = sbClient;
         registerSupabaseSaveHelpers(sbClient);
-        await Promise.all([
-            hydrateSupabaseProducts(sbClient),
-            hydrateSupabaseOrders(sbClient),
-            hydrateSupabaseCms(sbClient),
-            hydrateSupabaseAuditLogs(sbClient)
-        ]);
+        const isAdminSession = await checkSupabaseAdminSession(sbClient);
+        enforceValidAdminUiSession(isAdminSession);
+        const hydrateTasks = [hydrateSupabaseProducts(sbClient), hydrateSupabaseCms(sbClient)];
+        if (isAdminSession) {
+            hydrateTasks.push(hydrateSupabaseOrders(sbClient), hydrateSupabaseAuditLogs(sbClient));
+        }
+        await Promise.all(hydrateTasks);
         if (sbSettings.enableRealtime) {
-            subscribeSupabaseRealtime(sbClient);
+            subscribeSupabaseRealtime(sbClient, isAdminSession);
         }
         setCloudSyncBadge('<i class="fa-solid fa-circle text-emerald-400 text-[8px] animate-pulse"></i> Supabase Real-time Sync');
         return true;
@@ -642,7 +787,7 @@ async function collectReferencedStoragePaths(sbClient) {
 
 async function cleanupOrphanedStorageImages() {
     const sbClient = window.soulinSupabaseClient;
-    if (!sbClient || !sbClient.storage) {
+    if (!sbClient || !sbClient.storage || !(await checkSupabaseAdminSession(sbClient))) {
         return { ok: false, deletedCount: 0, deletedPaths: [] };
     }
     const referencedSet = await collectReferencedStoragePaths(sbClient);
@@ -675,14 +820,24 @@ window.extractStoragePathFromPublicUrl = extractStoragePathFromPublicUrl;
 window.deleteImageFromCloud = (imageUrl) => deleteImagesFromSupabaseStorage([imageUrl]);
 window.deleteImagesFromCloud = deleteImagesFromSupabaseStorage;
 window.cleanupOrphanedStorageImages = cleanupOrphanedStorageImages;
+window.hasValidSupabaseAdminSession = (explicitClient) => checkSupabaseAdminSession(explicitClient);
+window.signInAdminWithSupabase = signInAdminWithSupabase;
+window.signOutSupabaseAuth = (explicitClient) => performSupabaseSignOut(explicitClient);
+
+let activeCloudInitPromise = null;
 
 async function initCloudSync() {
+    if (activeCloudInitPromise) return activeCloudInitPromise;
     const sbSettings = getSupabaseSettings();
     if (sbSettings.url && sbSettings.publishableKey) {
-        return initSupabaseCloud(sbSettings);
+        activeCloudInitPromise = initSupabaseCloud(sbSettings);
+        window.soulinCloudReadyPromise = activeCloudInitPromise;
+        return activeCloudInitPromise;
     }
     if (typeof __firebase_config !== 'undefined') {
-        return initFirebaseCloud();
+        activeCloudInitPromise = initFirebaseCloud();
+        window.soulinCloudReadyPromise = activeCloudInitPromise;
+        return activeCloudInitPromise;
     }
     setCloudSyncBadge('<i class="fa-solid fa-circle text-amber-400 text-[8px]"></i> Local Mode');
     return false;

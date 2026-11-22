@@ -47,6 +47,21 @@ function redirectUnauthorizedAdminRoute() {
     }
 }
 
+async function verifyLiveAdminAuthSession() {
+    if (!window.soulinSupabaseClient || typeof window.hasValidSupabaseAdminSession !== 'function') {
+        return true;
+    }
+    const validAdmin = await window.hasValidSupabaseAdminSession();
+    if (validAdmin) return true;
+    window.currentUser = null;
+    localStorage.removeItem('soulin_user');
+    if (typeof renderAuthUI === 'function') renderAuthUI();
+    showToast('เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'error');
+    switchTab('home');
+    redirectUnauthorizedAdminRoute();
+    return false;
+}
+
 function renderAdminDashboard() {
     if (!window.currentUser || window.currentUser.role !== 'admin') {
         showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
@@ -54,6 +69,7 @@ function renderAdminDashboard() {
         redirectUnauthorizedAdminRoute();
         return;
     }
+    verifyLiveAdminAuthSession();
     renderAdminProductsTable();
     renderAdminOrdersList();
     updateAdminStats();

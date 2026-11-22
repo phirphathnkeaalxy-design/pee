@@ -199,7 +199,7 @@ function finalizeAdminSignIn(adminSession, passwordEl, rememberEl) {
     return true;
 }
 
-function handleAdminLoginSubmit(submitEvent) {
+async function handleAdminLoginSubmit(submitEvent) {
     if (submitEvent) submitEvent.preventDefault();
     setAdminLoginError('');
 
@@ -209,32 +209,42 @@ function handleAdminLoginSubmit(submitEvent) {
         return false;
     }
 
-    const attemptedUser = getInputValueById('admin-login-username').trim();
+    const attemptedEmail = getInputValueById('admin-login-username').trim();
     const passwordEl = document.getElementById('admin-login-password');
     const rememberEl = document.getElementById('admin-remember-username');
-    const authOutcome = verifyAdminCredentials(
-        attemptedUser,
-        getInputValueById('admin-login-password')
-    );
+    const submitBtn = document.getElementById('admin-login-submit-btn');
+    if (submitBtn) submitBtn.disabled = true;
 
-    if (!authOutcome.ok) {
-        handleAdminFailedLogin(authOutcome.message, passwordEl, attemptedUser);
-        return false;
+    try {
+        if (window.soulinCloudReadyPromise) await window.soulinCloudReadyPromise;
+        if (typeof window.signInAdminWithSupabase !== 'function') {
+            handleAdminFailedLogin('ระบบยืนยันตัวตน Supabase ยังไม่พร้อมใช้งาน', passwordEl, attemptedEmail);
+            return false;
+        }
+        const authOutcome = await window.signInAdminWithSupabase(attemptedEmail, passwordEl ? passwordEl.value : '');
+        if (!authOutcome.ok) {
+            handleAdminFailedLogin(authOutcome.message, passwordEl, attemptedEmail);
+            return false;
+        }
+        return finalizeAdminSignIn(authOutcome.user, passwordEl, rememberEl);
+    } finally {
+        if (submitBtn && getAdminLockRemainingSeconds() === 0) submitBtn.disabled = false;
     }
-
-    return finalizeAdminSignIn(authOutcome.user, passwordEl, rememberEl);
 }
 
-function handleAdminLoginPageLogout() {
+async function handleAdminLoginPageLogout() {
     const prevUser = window.currentUser ? window.currentUser.username : 'admin';
     emitAdminAuthAudit('ADMIN_LOGOUT', prevUser, `ผู้ดูแลระบบ "${prevUser}" ออกจากระบบจากหน้า Admin Login`, 'info');
+    if (typeof window.signOutSupabaseAuth === 'function') {
+        await window.signOutSupabaseAuth();
+    }
     window.currentUser = null;
     localStorage.removeItem('soulin_user');
     renderAdminLoginState();
     showToast('ออกจากระบบแอดมินเรียบร้อยแล้ว', 'info');
 }
 
-function bootstrapAdminLoginPage() {
+async function bootstrapAdminLoginPage() {
     const brandLogo = document.getElementById('admin-brand-logo');
     if (brandLogo) {
         const safeLogoUrl = sanitizeImageUrl(window.cmsConfig && window.cmsConfig.img) || DEFAULT_CMS_CONFIG.img;
@@ -242,7 +252,15 @@ function bootstrapAdminLoginPage() {
     }
     renderAdminLoginState();
     if (typeof initCloudSync === 'function') {
-        initCloudSync();
+        await initCloudSync();
+    }
+    if (window.currentUser && window.currentUser.role === 'admin' && typeof window.hasValidSupabaseAdminSession === 'function') {
+        const hasSession = await window.hasValidSupabaseAdminSession();
+        if (!hasSession) {
+            window.currentUser = null;
+            localStorage.removeItem('soulin_user');
+            renderAdminLoginState();
+        }
     }
 }
 
