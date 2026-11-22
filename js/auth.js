@@ -447,6 +447,27 @@ function adminLogout() {
     logout();
 }
 
+function buildAuthenticatedNavHtml(userSession, isAdmin) {
+    const safeName = escapeHtml(userSession.name);
+    const profileLabel = isAdmin ? 'โปรไฟล์ของฉัน' : safeName;
+    const safeAvatar = sanitizeImageUrl(userSession.avatarUrl || '');
+    const avatarBadge = safeAvatar
+        ? `<img src="${escapeHtml(safeAvatar)}" alt="${safeName}" class="w-5 h-5 rounded-full object-cover border border-emerald-200">`
+        : '<i class="fa-solid fa-circle-user text-soulin-primary"></i>';
+    return `
+        <div class="flex items-center space-x-2">
+            <a href="./member.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-soulin-dark bg-soulin-mint/80 hover:bg-soulin-mint px-3 py-1.5 rounded-xl border border-emerald-200/70 transition-all">
+                ${avatarBadge}
+                <span class="hidden sm:inline">${profileLabel}</span>
+                <span class="sm:hidden">บัญชี</span>
+            </a>
+            <button onclick="logout()" class="text-xs text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 font-medium transition-all">
+                ออกจากระบบ
+            </button>
+        </div>
+    `;
+}
+
 function renderAuthUI() {
     const container = document.getElementById('auth-button-container');
     const adminNav = document.getElementById('admin-nav-item');
@@ -458,23 +479,7 @@ function renderAuthUI() {
     if (!container) return;
 
     if (window.currentUser) {
-        const safeName = escapeHtml(window.currentUser.name);
-        const safeAvatar = sanitizeImageUrl(window.currentUser.avatarUrl || '');
-        const avatarBadge = safeAvatar
-            ? `<img src="${escapeHtml(safeAvatar)}" alt="${safeName}" class="w-5 h-5 rounded-full object-cover border border-emerald-200">`
-            : '<i class="fa-solid fa-circle-user text-soulin-primary"></i>';
-        container.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <a href="./member.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-soulin-dark bg-soulin-mint/80 hover:bg-soulin-mint px-3 py-1.5 rounded-xl border border-emerald-200/70 transition-all">
-                    ${avatarBadge}
-                    <span class="hidden sm:inline">${safeName}</span>
-                    <span class="sm:hidden">บัญชี</span>
-                </a>
-                <button onclick="logout()" class="text-xs text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 font-medium transition-all">
-                    ออกจากระบบ
-                </button>
-            </div>
-        `;
+        container.innerHTML = buildAuthenticatedNavHtml(window.currentUser, isAdmin);
         return;
     }
 
