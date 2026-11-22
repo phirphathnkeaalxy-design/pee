@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบสมาชิก | SOULIN (โซลอิน)</title>
+    <!-- Tailwind CSS CDN & Theme Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="./css/styles.css">
+
+    <!-- Application Modules (Ordered Dependency DAG, file:// & HTTP compatible) -->
+    <script defer src="./js/catalog-data.js"></script>
+    <script defer src="./js/store.js"></script>
+    <script defer src="./js/toast.js"></script>
+    <script defer src="./js/auth.js"></script>
+    <script defer src="./js/google-auth-config.js"></script>
+    <script defer src="./js/google-auth.js"></script>
+    <script defer src="./js/login-page.js"></script>
+</head>
+<body class="min-h-screen soulin-auth-bg custom-scrollbar antialiased">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
+
+        <!-- LEFT PANEL: BOTANICAL APOTHECARY BRAND STORY -->
+        <aside class="lg:col-span-5 soulin-botanical-panel text-white relative overflow-hidden p-8 sm:p-12 flex flex-col justify-between">
+            <!-- Decorative Botanical Leaf SVG Accent -->
+            <svg aria-hidden="true" viewBox="0 0 240 240" class="pointer-events-none absolute -right-14 -bottom-14 w-72 h-72 text-emerald-200/10">
+                <path fill="currentColor" d="M198 22C125 22 63 65 44 134c-8 29-3 60 12 84 23-39 58-73 102-96-37 31-67 68-86 108 32 8 67 2 95-19 52-39 67-115 31-189z" />
+            </svg>
+
+            <!-- Top Back Link -->
+            <div class="relative z-10 flex items-center justify-between animate-fade-rise">
+                <a href="./soulin.html" class="inline-flex items-center gap-2 text-xs font-medium text-soulin-light hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 px-3.5 py-2 rounded-xl transition-all">
+                    <i class="fa-solid fa-arrow-left text-[11px]"></i>
+                    กลับหน้าร้าน SOULIN
+                </a>
+                <span class="text-[11px] uppercase tracking-[0.22em] text-soulin-accent font-semibold">Member Club</span>
+            </div>
+
+            <!-- Brand Medallion & Slogan -->
+            <div class="relative z-10 my-10 lg:my-0 space-y-6 animate-fade-rise animate-delay-1">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-white/95 p-2 shadow-xl border border-white/40 flex items-center justify-center flex-shrink-0">
+                        <img id="login-brand-logo" src="https://cdn.phototourl.com/anon/2026-11-17-6fd33c34-28bf-4b63-b3ff-7da85f10f787.png" alt="SOULIN Logo" class="w-full h-full object-contain rounded-xl">
+                    </div>
+                    <div>
+                        <span class="font-serif text-3xl sm:text-4xl font-semibold tracking-[0.18em] text-white block leading-none">SOULIN</span>
+                        <span class="text-[11px] tracking-[0.2em] uppercase text-soulin-light mt-1 block">Soul + Inhale • โซลอิน</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h1 class="text-2xl sm:text-3xl font-bold leading-snug text-white">
+                        สูดความสดชื่น<br>ลึกถึงดวงวิญญาณ
+                    </h1>
+                    <p class="text-xs sm:text-sm text-emerald-100/80 leading-relaxed font-light max-w-md">
+                        เข้าสู่ระบบสมาชิกเพื่อสั่งซื้อยาดมสมุนไพรธรรมชาติแท้ 10 ชนิด พร้อมเช็คประวัติคำสั่งซื้อและรับสิทธิพิเศษได้ทุกเวลา
+                    </p>
+                </div>
+
+                <!-- Member Benefits -->
+                <ul class="space-y-3 pt-2 text-xs text-emerald-50/90">
+                    <li class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-soulin-accent/20 text-soulin-accent flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-tag text-xs"></i>
+                        </span>
+                        <span>รับส่วนลดอัตโนมัติ <strong>50 ฿</strong> ทันทีเมื่อช้อปครบ 500 ฿</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-box-open text-xs"></i>
+                        </span>
+                        <span>ติดตามสถานะการจัดส่งและประวัติการสั่งซื้อย้อนหลัง</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-white/15 text-soulin-light flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-seedling text-xs"></i>
+                        </span>
+                        <span>สมุนไพรออร์แกนิกหมักบ่มแท้ 100% คัดสรรทั้ง 8 รูปแบบ</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="relative z-10 text-[11px] text-soulin-light/80 border-t border-white/10 pt-5 flex flex-wrap justify-between gap-2 animate-fade-rise animate-delay-2">
+                <span>© 2026 SOULIN Botanical Apothecary</span>
+                <span>Natural Herbal Inhaler</span>
+            </div>
+        </aside>
+
+        <!-- RIGHT PANEL: CUSTOMER AUTHENTICATION CANVAS -->
+        <main class="lg:col-span-7 flex flex-col justify-between p-6 sm:p-10 lg:p-14">
+
+            <!-- Top Utility Bar -->
+            <div class="flex items-center justify-between max-w-md w-full mx-auto animate-fade-rise">
+                <a href="./soulin.html?tab=products" class="text-xs font-medium text-soulin-primary hover:text-soulin-dark flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-store"></i>
+                    เลือกชมสินค้าทั้งหมด
+                </a>
+                <a href="./soulin.html?tab=cart" class="relative inline-flex items-center gap-2 text-xs font-semibold text-soulin-dark bg-white border border-emerald-100 px-3.5 py-2 rounded-xl shadow-sm hover:bg-soulin-mint transition-all">
+                    <i class="fa-solid fa-bag-shopping text-soulin-primary"></i>
+                    ตะกร้าสินค้า
+                    <span id="login-cart-badge" class="hidden bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">0</span>
+                </a>
+            </div>
+
+            <!-- Center Auth Card Container -->
+            <div class="max-w-md w-full mx-auto my-8 animate-fade-rise animate-delay-1">
+
+                <!-- ALREADY LOGGED IN VIEW -->
+                <section id="already-logged-in-card" class="hidden bg-white rounded-3xl border border-emerald-100 smooth-shadow p-8 text-center space-y-6">
+                    <div class="w-16 h-16 rounded-2xl bg-soulin-mint text-soulin-primary mx-auto flex items-center justify-center text-2xl border border-emerald-200/70">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </div>
+                    <div class="space-y-1.5">
+                        <span id="signed-in-role" class="inline-block text-[11px] font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">สมาชิกลูกค้า SOULIN</span>
+                        <h2 class="text-2xl font-bold text-soulin-dark">สวัสดี, <span id="signed-in-name">ลูกค้า</span></h2>
+                        <p class="text-xs text-slate-500">คุณเข้าสู่ระบบเรียบร้อยแล้ว สามารถเลือกช้อปหรือเช็คคำสั่งซื้อได้ทันที</p>
+                    </div>
+                    <div class="space-y-2.5 pt-2">
+                        <a href="./member.html" class="block w-full bg-soulin-primary hover:bg-soulin-dark text-white text-xs sm:text-sm font-semibold py-3 rounded-xl shadow-md transition-all">
+                            <i class="fa-solid fa-id-badge mr-1.5"></i> ไปยังหน้าบัญชีสมาชิกของฉัน
+                        </a>
+                        <a href="./soulin.html?tab=products" class="block w-full bg-soulin-mint hover:bg-emerald-100 text-soulin-primary text-xs sm:text-sm font-semibold py-3 rounded-xl transition-all">
+                            <i class="fa-solid fa-bag-shopping mr-1.5"></i> ไปช้อปสินค้าต่อ
+                        </a>
+                        <a href="./soulin.html?tab=orders" class="block w-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-semibold py-3 rounded-xl transition-all">
+                            <i class="fa-solid fa-receipt mr-1.5"></i> ดูคำสั่งซื้อของฉัน
+                        </a>
+                        <a id="signed-in-admin-link" href="./soulin.html?tab=admin" class="hidden block w-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs sm:text-sm font-semibold py-3 rounded-xl transition-all">
+                            <i class="fa-solid fa-user-shield mr-1.5"></i> ไปยังระบบแอดมิน (CMS)
+                        </a>
+                        <button type="button" onclick="handleLoginPageLogout()" class="w-full text-xs font-semibold text-red-600 hover:bg-red-50 py-2.5 rounded-xl border border-red-200 transition-all">
+                            ออกจากระบบ
+                        </button>
+                    </div>
+                </section>
+
+                <!-- LOGIN & SIGNUP CARD -->
+                <section id="auth-forms-card" class="bg-white rounded-3xl border border-emerald-100/90 smooth-shadow p-7 sm:p-9 space-y-6">
+
+                    <!-- Segmented Mode Switcher -->
+                    <div role="tablist" aria-label="สลับเข้าสู่ระบบและสมัครสมาชิก" class="bg-soulin-bg p-1.5 rounded-2xl border border-emerald-100 flex gap-1.5">
+                        <button type="button" role="tab" id="tab-btn-login" aria-selected="true" onclick="switchLoginPageMode('login')" class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white text-soulin-dark shadow-sm transition-all">
+                            เข้าสู่ระบบ
+                        </button>
+                        <button type="button" role="tab" id="tab-btn-signup" aria-selected="false" onclick="switchLoginPageMode('signup')" class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-medium text-slate-500 hover:text-soulin-dark transition-all">
+                            สมัครสมาชิกใหม่
+                        </button>
+                    </div>
+
+                    <!-- Heading -->
+                    <div class="space-y-1">
+                        <h2 id="auth-page-heading" class="text-2xl font-bold text-soulin-dark">ยินดีต้อนรับกลับมา</h2>
+                        <p id="auth-page-subtitle" class="text-xs text-slate-500 leading-relaxed">เข้าสู่ระบบเพื่อสั่งซื้อยาดมสมุนไพรและรับสิทธิพิเศษสมาชิก</p>
+                    </div>
+
+                    <!-- GOOGLE SIGN-IN / SIGN-UP -->
+                    <div class="space-y-3">
+                        <div id="google-gsi-btn-wrap" class="hidden flex justify-center"></div>
+                        <button type="button" id="google-auth-btn" onclick="startGoogleAuthFlow()" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-xl border border-slate-200 hover:border-slate-300 shadow-sm transition-all text-xs sm:text-sm flex items-center justify-center gap-2.5">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.37 24 12 24z"/>
+                                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                            </svg>
+                            <span id="google-auth-btn-label">เข้าสู่ระบบด้วย Google</span>
+                        </button>
+                        <div class="relative flex items-center py-1">
+                            <div class="flex-grow border-t border-slate-200"></div>
+                            <span class="flex-shrink mx-3 text-[11px] text-slate-400">หรือใช้ชื่อผู้ใช้งานและรหัสผ่าน</span>
+                            <div class="flex-grow border-t border-slate-200"></div>
+                        </div>
+                    </div>
+
+                    <!-- CUSTOMER LOGIN FORM -->
+                    <form id="login-page-form" onsubmit="handleLoginPageSubmit(event)" class="space-y-4">
+                        <div>
+                            <label for="page-login-username" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user text-slate-400 text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="page-login-username" required autocomplete="username" placeholder="กรอกชื่อผู้ใช้งานของคุณ" class="soulin-input w-full text-sm pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="page-login-password" class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่าน (Password)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock text-slate-400 text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="password" id="page-login-password" required autocomplete="current-password" placeholder="กรอกรหัสผ่านของคุณ" class="soulin-input w-full text-sm pl-10 pr-11 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('page-login-password', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <label class="flex items-center gap-2.5 text-xs text-slate-600 cursor-pointer select-none pt-0.5">
+                            <input type="checkbox" id="page-remember-username" class="w-4 h-4 rounded border-slate-300 text-soulin-primary focus:ring-soulin-primary">
+                            <span>จดจำชื่อผู้ใช้งานไว้ในเครื่องนี้</span>
+                        </label>
+
+                        <div id="login-inline-error" role="alert" class="hidden text-xs text-red-700 bg-red-50 border border-red-200 px-3.5 py-2.5 rounded-xl"></div>
+
+                        <button type="submit" class="w-full bg-soulin-primary hover:bg-soulin-dark text-white font-semibold py-3.5 rounded-xl shadow-md transition-all text-xs sm:text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            เข้าสู่ระบบ SOULIN
+                        </button>
+
+                        <p class="text-center text-xs text-slate-500 pt-1">
+                            ยังไม่มีบัญชีสมาชิก?
+                            <button type="button" onclick="switchLoginPageMode('signup')" class="text-soulin-primary font-semibold hover:underline ml-1">สมัครสมาชิกฟรี</button>
+                        </p>
+                    </form>
+
+                    <!-- CUSTOMER SIGNUP FORM -->
+                    <form id="signup-page-form" onsubmit="handleSignupPageSubmit(event)" class="space-y-4 hidden">
+                        <div>
+                            <label for="page-signup-fullname" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อ-นามสกุล</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-id-card text-slate-400 text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="page-signup-fullname" required autocomplete="name" placeholder="เช่น พีรภัทร ใจดี" class="soulin-input w-full text-sm pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="page-signup-username" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้งาน (User)</label>
+                                <input type="text" id="page-signup-username" required minlength="3" autocomplete="username" placeholder="อย่างน้อย 3 ตัวอักษร" class="soulin-input w-full text-sm px-3.5 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+                            <div>
+                                <label for="page-signup-phone" class="block text-xs font-semibold text-slate-700 mb-1.5">เบอร์โทรศัพท์ <span class="text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                                <input type="tel" id="page-signup-phone" autocomplete="tel" placeholder="08X-XXX-XXXX" class="soulin-input w-full text-sm px-3.5 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="page-signup-password" class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock text-slate-400 text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="password" id="page-signup-password" required minlength="6" autocomplete="new-password" placeholder="ตั้งรหัสผ่านของคุณ" class="soulin-input w-full text-sm pl-10 pr-11 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('page-signup-password', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 space-y-1">
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div id="password-strength-bar" class="h-1.5 rounded-full transition-all duration-300 bg-slate-200 w-0"></div>
+                                </div>
+                                <span id="password-strength-label" class="block text-[11px] text-slate-500"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="page-signup-confirm" class="block text-xs font-semibold text-slate-700 mb-1.5">ยืนยันรหัสผ่านอีกครั้ง</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-shield-halved text-slate-400 text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="password" id="page-signup-confirm" required minlength="6" autocomplete="new-password" placeholder="กรอกรหัสผ่านให้ตรงกัน" class="soulin-input w-full text-sm pl-10 pr-11 py-3 border border-slate-200 rounded-xl bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('page-signup-confirm', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <label class="flex items-start gap-2.5 text-xs text-slate-600 bg-slate-50/70 border border-slate-200 rounded-xl p-3 cursor-pointer">
+                            <input type="checkbox" id="page-signup-pdpa" class="w-4 h-4 mt-0.5 accent-soulin-primary rounded flex-shrink-0">
+                            <span>ฉันได้อ่านและยอมรับ <a href="./privacy.html#terms" target="_blank" rel="noopener" class="text-soulin-primary font-semibold hover:underline">ข้อกำหนดการใช้งาน</a> และ <a href="./privacy.html#privacy" target="_blank" rel="noopener" class="text-soulin-primary font-semibold hover:underline">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ SOULIN</span>
+                        </label>
+
+                        <div id="signup-inline-error" role="alert" class="hidden text-xs text-red-700 bg-red-50 border border-red-200 px-3.5 py-2.5 rounded-xl"></div>
+
+                        <button type="submit" class="w-full bg-soulin-primary hover:bg-soulin-dark text-white font-semibold py-3.5 rounded-xl shadow-md transition-all text-xs sm:text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i>
+                            สมัครสมาชิกและเข้าใช้งาน
+                        </button>
+
+                        <p class="text-center text-xs text-slate-500 pt-1">
+                            มีบัญชีอยู่แล้ว?
+                            <button type="button" onclick="switchLoginPageMode('login')" class="text-soulin-primary font-semibold hover:underline ml-1">กลับไปเข้าสู่ระบบ</button>
+                        </p>
+                    </form>
+
+                    <!-- Guest Browse Link -->
+                    <div class="border-t border-slate-100 pt-4 text-center space-y-2">
+                        <a href="./soulin.html?tab=products" class="text-xs text-slate-500 hover:text-soulin-primary transition-colors inline-flex items-center gap-1.5">
+                            เลือกชมสินค้าโดยยังไม่เข้าสู่ระบบ <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                        <div>
+                            <a href="./admin-login.html" class="text-[11px] text-slate-400 hover:text-soulin-dark transition-colors inline-flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-shield text-[10px]"></i> สำหรับผู้ดูแลระบบ (Admin)
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Subtle Bottom Hint -->
+            <p class="text-center text-[11px] text-slate-400 max-w-md w-full mx-auto animate-fade-rise animate-delay-2">
+                ข้อมูลบัญชีของคุณจะเชื่อมต่อกับหน้าร้าน SOULIN โดยอัตโนมัติ •
+                <a href="./privacy.html#privacy" class="text-soulin-primary hover:underline">นโยบาย PDPA</a> •
+                <a href="./privacy.html#terms" class="text-soulin-primary hover:underline">ข้อกำหนดการใช้งาน</a>
+            </p>
+        </main>
+    </div>
+
+    <!-- GOOGLE ACCOUNT DEMO CHOOSER MODAL (LOCAL / FILE:// FALLBACK) -->
+    <div id="google-demo-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 relative smooth-shadow space-y-5">
+            <button type="button" onclick="closeGoogleDemoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 pr-6">
+                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="w-5 h-5">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.37 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-soulin-dark">เข้าสู่ระบบ / สมัครด้วย Google</h3>
+                    <p class="text-[11px] text-slate-500">เลือกบัญชี Google เพื่อเชื่อมต่อกับ SOULIN</p>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800 leading-relaxed">
+                <strong>โหมดจำลอง Google (Demo Mode):</strong> ใช้ทดสอบได้ทันทีบน <code>file://</code> หากต้องการต่อบัญชี Google จริง ให้ใส่ OAuth Client ID ใน <code>js/google-auth-config.js</code> และเปิดผ่าน <code>http://localhost</code> หรือ <code>https://</code>
+            </div>
+
+            <div id="google-demo-accounts-list" class="hidden space-y-2"></div>
+
+            <form id="google-demo-form" onsubmit="handleGoogleDemoFormSubmit(event)" class="space-y-3 border-t border-slate-100 pt-3">
+                <span class="block text-[11px] font-semibold text-slate-600">ใช้บัญชี Google ใหม่ (สำหรับทดสอบ)</span>
+                <div>
+                    <label for="google-demo-name" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-นามสกุล (จากโปรไฟล์ Google)</label>
+                    <input type="text" id="google-demo-name" required placeholder="เช่น สุนิสา ใจดี" class="w-full text-xs sm:text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+                <div>
+                    <label for="google-demo-email" class="block text-xs font-semibold text-slate-700 mb-1">อีเมล Google</label>
+                    <input type="email" id="google-demo-email" required placeholder="name@gmail.com" class="w-full text-xs sm:text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+
+                <div id="google-demo-error" role="alert" class="hidden text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl"></div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="closeGoogleDemoModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 py-2.5 rounded-xl text-xs">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="flex-1 bg-soulin-primary hover:bg-soulin-dark text-white font-semibold py-2.5 rounded-xl shadow text-xs sm:text-sm transition-all">
+                        ดำเนินการต่อด้วย Google
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

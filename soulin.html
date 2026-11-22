@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOULIN | โซลอิน - สูดความสดชื่น ลึกถึงดวงวิญญาณ</title>
+    <meta name="description" content="SOULIN โซลอิน ยาดมสมุนไพรธรรมชาติแท้ 100% คัดสรรสมุนไพรกว่า 10 ชนิด สั่งซื้อออนไลน์พร้อมจัดส่งทั่วไทย">
+    <meta name="theme-color" content="#2D5A42">
+    <meta property="og:title" content="SOULIN | โซลอิน - ยาดมสมุนไพรธรรมชาติแท้ 100%">
+    <meta property="og:description" content="สูดความสดชื่น ลึกถึงดวงวิญญาณ ช้อปยาดมสมุนไพร SOULIN ออนไลน์ พร้อมโปรลดทันที 50 ฿ เมื่อซื้อครบ 500 ฿">
+    <link rel="icon" type="image/png" href="https://cdn.phototourl.com/anon/2026-11-17-6fd33c34-28bf-4b63-b3ff-7da85f10f787.png">
+    <!-- Tailwind CSS CDN & Theme Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN & QRCode Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="./css/styles.css">
+
+    <!-- Application Modules (Ordered Dependency DAG, file:// & HTTP compatible) -->
+    <script defer src="./js/catalog-data.js"></script>
+    <script defer src="./js/store.js"></script>
+    <script defer src="./js/toast.js"></script>
+    <script defer src="./js/auth.js"></script>
+    <script defer src="./js/thai-address-data.js"></script>
+    <script defer src="./js/address-book.js"></script>
+    <script defer src="./js/catalog.js"></script>
+    <script defer src="./js/cart.js"></script>
+    <script defer src="./js/sheets.js"></script>
+    <script defer src="./js/orders.js"></script>
+    <script defer src="./js/payment.js"></script>
+    <script defer src="./js/audit-log.js"></script>
+    <script defer src="./js/pdpa.js"></script>
+    <script defer src="./js/cms.js"></script>
+    <script defer src="./js/admin.js"></script>
+    <script defer src="./js/supabase-config.js"></script>
+    <script defer src="./js/cloud-sync.js"></script>
+    <script defer src="./js/navigation.js"></script>
+</head>
+<body class="min-h-screen flex flex-col justify-between custom-scrollbar">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MAIN NAVBAR -->
+    <header id="storefront-header" class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                
+                <!-- Logo Header -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+                    <div class="relative w-11 h-11 bg-soulin-mint rounded-2xl flex items-center justify-center text-soulin-primary border border-emerald-200/60 shadow-inner">
+                        <i class="fa-solid fa-leaf text-xl text-soulin-primary"></i>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-bold tracking-widest text-soulin-dark block leading-none">SOULIN</span>
+                        <span class="text-[10px] tracking-wider text-soulin-medium font-light uppercase">Soul + Inhale (โซลอิน)</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex space-x-8">
+                    <button onclick="switchTab('home')" class="nav-btn text-soulin-dark hover:text-soulin-primary font-medium text-sm transition-colors py-2 border-b-2 border-transparent" id="nav-home">หน้าหลัก & โปรโมชั่น</button>
+                    <button onclick="switchTab('products')" class="nav-btn text-soulin-dark hover:text-soulin-primary font-medium text-sm transition-colors py-2 border-b-2 border-transparent" id="nav-products">รายการสินค้า (8 ตะกร้า)</button>
+                    <button onclick="switchTab('orders')" class="nav-btn text-soulin-dark hover:text-soulin-primary font-medium text-sm transition-colors py-2 border-b-2 border-transparent" id="nav-orders">คำสั่งซื้อของฉัน</button>
+                    <button onclick="switchTab('admin')" id="admin-nav-item" class="hidden text-amber-800 bg-amber-50 hover:bg-amber-100 font-medium text-xs px-3 py-1.5 rounded-full border border-amber-200 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-shield"></i> ระบบแอดมิน (CMS)
+                    </button>
+                </nav>
+
+                <!-- Actions: Cart & Account -->
+                <div class="flex items-center space-x-4">
+                    <!-- Cart Button -->
+                    <button onclick="switchTab('cart')" class="relative p-2.5 text-soulin-primary hover:bg-soulin-mint rounded-2xl transition-all">
+                        <i class="fa-solid fa-bag-shopping text-xl"></i>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-emerald-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow">0</span>
+                    </button>
+
+                    <!-- Account Button -->
+                    <div id="auth-button-container">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-soulin-dark hover:bg-soulin-mint rounded-lg">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-emerald-100 bg-white px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchTab('home'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 text-soulin-dark hover:bg-soulin-mint rounded-md font-medium text-sm">หน้าหลัก & โปรโมชั่น</button>
+            <button onclick="switchTab('products'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 text-soulin-dark hover:bg-soulin-mint rounded-md font-medium text-sm">รายการสินค้า (8 ตะกร้า)</button>
+            <button onclick="switchTab('orders'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 text-soulin-dark hover:bg-soulin-mint rounded-md font-medium text-sm">คำสั่งซื้อของฉัน</button>
+            <button onclick="switchTab('admin'); toggleMobileMenu()" id="admin-mobile-nav" class="hidden w-full text-left py-2 px-3 text-amber-800 bg-amber-50 rounded-md font-medium text-sm">ระบบบริหารแอดมิน</button>
+        </div>
+    </header>
+
+    <!-- TOP WIDE BRAND BANNER (SOULIN) -->
+    <div id="top-brand-banner" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="rounded-3xl overflow-hidden shadow-md border border-emerald-200/60 bg-white">
+            <img id="top-wide-banner-img" src="https://cdn.phototourl.com/anon/2026-11-17-ed9976cb-2b06-4450-b04d-71cafa49b87a.jpg" alt="SOULIN Brand Banner" class="w-full h-auto block">
+        </div>
+    </div>
+
+    <!-- CONTENT VIEWS WRAPPER -->
+    <main id="storefront-main" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= PAGE 1: HOME & PROMOTIONS ================= -->
+        <section id="page-home" class="space-y-12">
+            <!-- Dynamic Banner -->
+            <div id="hero-banner-container" class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-soulin-dark via-soulin-primary to-soulin-medium text-white shadow-xl min-h-[360px] flex items-center">
+                <div class="absolute inset-0 bg-black/20 z-0"></div>
+                <div class="relative z-10 max-w-2xl px-8 sm:px-12 py-10 space-y-5">
+                    <div class="inline-flex items-center gap-2 bg-white/15 border border-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs tracking-wider uppercase">
+                        <i class="fa-solid fa-spa text-emerald-300"></i>
+                        <span id="hero-tag">100% Organic Botanical Inhaler</span>
+                    </div>
+                    <h1 id="hero-title" class="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
+                        สูดความสดชื่น<br>ลึกไปถึงดวงวิญญาณ
+                    </h1>
+                    <p id="hero-subtitle" class="text-soulin-mint text-xs sm:text-sm leading-relaxed font-light">
+                        สัมผัสความผ่อนคลายลึกระดับวิญญาณ ด้วยยาดมสมุนไพร SOULIN คัดสรรวัตถุดิบสมุนไพรธรรมชาติแท้ ช่วยผ่อนคลายสมอง คลายความเหนื่อยล้าในทุกวัน
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-4">
+                        <button onclick="switchTab('products')" class="bg-white text-soulin-dark font-semibold px-6 py-3 rounded-xl shadow-lg hover:bg-soulin-mint transition-all text-xs sm:text-sm">
+                            ช้อปสินค้าทั้งหมด 8 รูปแบบ <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="hidden lg:flex absolute right-12 top-1/2 transform -translate-y-1/2 z-10 items-center justify-center">
+                    <div class="w-60 h-60 rounded-full bg-white/95 backdrop-blur-md p-5 border border-white/40 flex items-center justify-center shadow-2xl">
+                        <img id="hero-img-display" src="https://cdn.phototourl.com/anon/2026-11-17-6fd33c34-28bf-4b63-b3ff-7da85f10f787.png" alt="SOULIN Logo" class="w-48 h-48 object-contain rounded-2xl">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Festive Promotions Section -->
+            <div class="space-y-6">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <span class="text-soulin-medium font-medium text-xs uppercase tracking-widest block">Seasonal Promotion</span>
+                        <h2 class="text-2xl font-bold text-soulin-dark">โปรโมชั่นพิเศษประจำเทศกาล</h2>
+                    </div>
+                    <span class="text-xs text-slate-500">ข้อเสนอสุดคุ้มวันนี้</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="promotions-grid">
+                    <!-- Dynamic Promo Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 2: PRODUCTS CATALOG (8 DISTINCT CARTS/ITEMS) ================= -->
+        <section id="page-products" class="hidden space-y-8">
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <span class="bg-soulin-mint text-soulin-primary text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-widest">SOULIN Catalog</span>
+                <h2 class="text-3xl font-bold text-soulin-dark">รายการยาดมสมุนไพร (8 ตะกร้าแยก)</h2>
+                <p class="text-xs sm:text-sm text-slate-600">เลือก 4 สูตรในรูปแบบที่คุณชอบ: แบบกระปุกสมุนไพรหมัก (Herbal Jar) หรือ แบบแท่งหัวลูกกลิ้ง (Roller Stick)</p>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="flex flex-wrap justify-center gap-2 sm:gap-3 border-b border-slate-200 pb-4">
+                <button onclick="filterProducts('all')" id="btn-filter-all" class="filter-btn px-5 py-2 rounded-xl text-sm font-medium transition-all bg-soulin-primary text-white shadow">ทั้งหมด (8 ตะกร้า)</button>
+                <button onclick="filterProducts('jar')" id="btn-filter-jar" class="filter-btn px-5 py-2 rounded-xl text-sm font-medium transition-all bg-white text-slate-600 hover:bg-soulin-mint">
+                    <i class="fa-solid fa-jar mr-1.5"></i> แบบกระปุกสมุนไพร 20g (4)
+                </button>
+                <button onclick="filterProducts('stick')" id="btn-filter-stick" class="filter-btn px-5 py-2 rounded-xl text-sm font-medium transition-all bg-white text-slate-600 hover:bg-soulin-mint">
+                    <i class="fa-solid fa-capsules mr-1.5"></i> แบบแท่งลูกกลิ้ง 10 ml (4)
+                </button>
+            </div>
+
+            <!-- Products Grid (8 Items) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="products-grid">
+                <!-- Dynamically rendered via JS -->
+            </div>
+        </section>
+
+        <!-- ================= PAGE 3: SHOPPING CART ================= -->
+        <section id="page-cart" class="hidden space-y-8">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-soulin-dark flex items-center gap-3">
+                    <i class="fa-solid fa-cart-shopping text-soulin-primary"></i>
+                    ตะกร้าสินค้าของคุณ
+                </h2>
+                <span id="cart-item-count-text" class="text-xs bg-soulin-mint text-soulin-primary px-3 py-1 rounded-full font-semibold">0 รายการ</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Cart Items List -->
+                <div class="lg:col-span-2 space-y-4" id="cart-items-container">
+                    <!-- Dynamically populated cart items -->
+                </div>
+
+                <!-- Order Summary Box -->
+                <div class="bg-white p-6 rounded-3xl border border-emerald-100 space-y-6 smooth-shadow h-fit sticky top-28">
+                    <h3 class="text-lg font-bold text-soulin-dark border-b border-slate-100 pb-3">สรุปคำสั่งซื้อ</h3>
+                    
+                    <div class="space-y-3 text-xs sm:text-sm">
+                        <div class="flex justify-between text-slate-600">
+                            <span>ราคาสินค้ารวม</span>
+                            <span id="summary-subtotal" class="font-medium text-slate-800">0 ฿</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>ค่าจัดส่ง (เหมาจ่าย)</span>
+                            <span id="summary-shipping" class="font-medium text-slate-800">40 ฿</span>
+                        </div>
+                        <div class="flex justify-between text-emerald-700 font-medium">
+                            <span>ส่วนลดพิเศษ</span>
+                            <span id="summary-discount">-0 ฿</span>
+                        </div>
+                        <div class="border-t border-slate-200 pt-3 flex justify-between text-base font-bold text-soulin-dark">
+                            <span>ยอดชำระสุทธิ</span>
+                            <span id="summary-total" class="text-xl text-soulin-primary">0 ฿</span>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Address Card -->
+                    <div class="space-y-2.5 pt-2">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-semibold text-slate-700">ที่อยู่จัดส่งสินค้า</label>
+                            <button type="button" onclick="openAddressModal()" class="text-xs font-semibold text-soulin-primary hover:text-soulin-dark flex items-center gap-1">
+                                <i class="fa-solid fa-pen-to-square"></i> เปลี่ยน / เพิ่มที่อยู่
+                            </button>
+                        </div>
+                        <div id="checkout-address-card" class="rounded-2xl border border-emerald-100 bg-soulin-bg/60 p-3.5 text-xs">
+                            <!-- Dynamically populated by cart.js -->
+                        </div>
+                        <input type="hidden" id="checkout-address">
+                    </div>
+
+                    <button onclick="openPaymentCheckout()" class="w-full bg-soulin-primary hover:bg-soulin-dark text-white font-semibold py-3.5 rounded-xl transition-all shadow-md text-xs sm:text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-credit-card text-xs"></i> ดำเนินการชำระเงิน
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 4: ORDERS HISTORY ================= -->
+        <section id="page-orders" class="hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-soulin-dark flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-soulin-primary"></i>
+                    คำสั่งซื้อของฉัน
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">ติดตามสถานะและตรวจสอบรายการยาดมที่สั่งซื้อ</p>
+            </div>
+
+            <div id="orders-list-container" class="space-y-4">
+                <!-- Dynamically populated orders -->
+            </div>
+        </section>
+
+        <!-- ================= PAGE 5: ADMIN PORTAL (EXECUTIVE SIDEBAR WORKSPACE) ================= -->
+        <section id="page-admin" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 items-start">
+                <!-- Left Dark Botanical Backoffice Sidebar -->
+                <aside class="soulin-admin-vault-bg soulin-admin-panel-border text-white rounded-3xl p-5 space-y-5 lg:sticky lg:top-5 relative overflow-hidden">
+                    <svg aria-hidden="true" viewBox="0 0 240 240" class="pointer-events-none absolute -right-12 -bottom-12 w-44 h-44 text-emerald-200/10"><path fill="currentColor" d="M198 22C125 22 63 65 44 134c-8 29-3 60 12 84 23-39 58-73 102-96-37 31-67 68-86 108 32 8 67 2 95-19 52-39 67-115 31-189z"/></svg>
+                    <div class="relative z-10 space-y-3 border-b border-white/10 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-white/95 p-1.5 shadow flex items-center justify-center flex-shrink-0"><img src="https://cdn.phototourl.com/anon/2026-11-17-6fd33c34-28bf-4b63-b3ff-7da85f10f787.png" alt="SOULIN" class="w-full h-full object-contain rounded"></div>
+                            <div>
+                                <span class="text-lg font-bold tracking-widest text-white block leading-none">SOULIN</span>
+                                <span class="text-[10px] tracking-wider uppercase text-amber-300 font-semibold">Admin Backoffice</span>
+                            </div>
+                        </div>
+                        <span id="cloud-sync-status" class="text-[11px] text-emerald-100 bg-white/10 border border-white/15 px-3 py-1 rounded-full inline-flex items-center gap-1.5"><i class="fa-solid fa-circle text-emerald-400 text-[8px]"></i> เชื่อมต่อฐานข้อมูลแล้ว</span>
+                    </div>
+
+                    <nav class="relative z-10 grid grid-cols-2 lg:grid-cols-1 gap-1.5">
+                        <button type="button" onclick="switchAdminTab('analytics')" id="adm-tab-analytics" class="adm-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-500/25 text-white border border-emerald-400/35 shadow-sm transition-all"><span class="inline-flex items-center gap-2"><i class="fa-solid fa-chart-line w-4 text-center"></i> ภาพรวม & ยอดขาย</span></button>
+                        <button type="button" onclick="switchAdminTab('products')" id="adm-tab-products" class="adm-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-emerald-100/75 hover:bg-white/10 hover:text-white border border-transparent transition-all"><span class="inline-flex items-center gap-2"><i class="fa-solid fa-boxes-stacked w-4 text-center"></i> จัดสต็อก (8)</span><span id="adm-badge-lowstock" class="hidden bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">0</span></button>
+                        <button type="button" onclick="switchAdminTab('cms')" id="adm-tab-cms" class="adm-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-emerald-100/75 hover:bg-white/10 hover:text-white border border-transparent transition-all"><span class="inline-flex items-center gap-2"><i class="fa-solid fa-pen-to-square w-4 text-center"></i> ปรับแต่ง CMS</span></button>
+                        <button type="button" onclick="switchAdminTab('orders')" id="adm-tab-orders" class="adm-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-emerald-100/75 hover:bg-white/10 hover:text-white border border-transparent transition-all"><span class="inline-flex items-center gap-2"><i class="fa-solid fa-list-check w-4 text-center"></i> ตรวจเช็คออเดอร์</span><span id="adm-badge-orders" class="hidden bg-amber-400 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">0</span></button>
+                        <button type="button" onclick="switchAdminTab('logs')" id="adm-tab-logs" class="adm-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-emerald-100/75 hover:bg-white/10 hover:text-white border border-transparent transition-all"><span class="inline-flex items-center gap-2"><i class="fa-solid fa-scroll w-4 text-center"></i> ประวัติ Log</span><span id="adm-badge-logs" class="hidden bg-emerald-400 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">0</span></button>
+                    </nav>
+
+                    <div class="relative z-10 border-t border-white/10 pt-4 space-y-2">
+                        <button type="button" onclick="switchTab('home')" class="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/15 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all"><i class="fa-solid fa-store"></i> กลับดูหน้าร้าน</button>
+                        <button type="button" onclick="exportOrdersToGoogleSheet()" class="w-full flex items-center justify-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-100 border border-emerald-400/30 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all"><i class="fa-solid fa-file-excel"></i> ส่งออก CSV</button>
+                        <button type="button" onclick="adminLogout()" class="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500 text-red-100 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold border border-red-400/40 transition-all"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบแอดมิน</button>
+                    </div>
+                </aside>
+
+                <!-- Right Executive Workspace -->
+                <div class="min-w-0 space-y-5">
+                    <div class="bg-white rounded-2xl border border-emerald-100 smooth-shadow px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 id="adm-workspace-title" class="text-lg sm:text-xl font-bold text-soulin-dark">ภาพรวม & ยอดขาย</h2>
+                            <p id="adm-workspace-subtitle" class="text-[11px] sm:text-xs text-slate-500">ติดตามรายได้ สต็อกสินค้า และคำสั่งซื้อแบบเรียลไทม์</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="switchTab('home')" class="bg-soulin-mint/70 hover:bg-soulin-mint text-soulin-dark px-3.5 py-2 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"><i class="fa-solid fa-eye"></i> ดูหน้าร้าน</button>
+                            <button type="button" onclick="adminLogout()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tab 1: Analytics & Overview -->
+                    <div id="adm-content-analytics" class="space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                            <div class="soulin-kpi-card bg-white p-5 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between gap-3">
+                                <div><span class="text-[11px] text-slate-500 font-semibold block">ยอดขายรวมทั้งหมด</span><div class="text-2xl sm:text-3xl font-bold text-soulin-dark mt-1" id="adm-stat-sales">0 ฿</div></div>
+                                <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center text-lg flex-shrink-0"><i class="fa-solid fa-baht-sign"></i></div>
+                            </div>
+                            <div class="soulin-kpi-card bg-white p-5 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between gap-3">
+                                <div><span class="text-[11px] text-slate-500 font-semibold block">คำสั่งซื้อสำเร็จ</span><div class="text-2xl sm:text-3xl font-bold text-soulin-dark mt-1" id="adm-stat-orders">0 ออเดอร์</div></div>
+                                <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center text-lg flex-shrink-0"><i class="fa-solid fa-clipboard-check"></i></div>
+                            </div>
+                            <div class="soulin-kpi-card bg-white p-5 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between gap-3">
+                                <div class="min-w-0"><span class="text-[11px] text-slate-500 font-semibold block">สินค้าขายดีอันดับ 1</span><div class="text-sm sm:text-base font-bold text-soulin-primary mt-1.5 truncate" id="adm-stat-bestseller">ยังไม่มีข้อมูลยอดขาย</div></div>
+                                <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center text-lg flex-shrink-0"><i class="fa-solid fa-crown"></i></div>
+                            </div>
+                            <div class="soulin-kpi-card bg-white p-5 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between gap-3">
+                                <div><span class="text-[11px] text-slate-500 font-semibold block">สุขภาพสต็อกสินค้า</span><div class="text-xl sm:text-2xl font-bold text-soulin-dark mt-1" id="adm-stat-lowstock">ปกติ</div><span id="adm-stat-stock-sub" class="text-[11px] text-slate-400">พร้อมจำหน่ายทุกรายการ</span></div>
+                                <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center text-lg flex-shrink-0"><i class="fa-solid fa-warehouse"></i></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+                            <div class="xl:col-span-8 bg-white p-5 sm:p-6 rounded-3xl border border-emerald-100 smooth-shadow">
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                    <div><h3 class="text-sm font-bold text-soulin-dark">กราฟยอดขายรายเดือน</h3><p class="text-[11px] text-slate-400">สรุปยอดขายสุทธิจากคำสั่งซื้อที่ใช้งาน (ไม่รวมออเดอร์ที่ยกเลิก)</p></div>
+                                    <span class="text-[11px] font-semibold bg-soulin-mint text-soulin-primary px-2.5 py-1 rounded-full">หน่วย: บาท (THB)</span>
+                                </div>
+                                <div class="h-64"><canvas id="salesChart"></canvas></div>
+                            </div>
+                            <div class="xl:col-span-4 space-y-5">
+                                <div class="bg-white p-5 rounded-3xl border border-emerald-100 smooth-shadow space-y-3">
+                                    <h3 class="text-sm font-bold text-soulin-dark flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> แจ้งเตือนสต็อกใกล้หมด</h3>
+                                    <div id="adm-lowstock-alerts" class="space-y-2.5 text-xs"></div>
+                                </div>
+                                <div class="bg-white p-5 rounded-3xl border border-emerald-100 smooth-shadow space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-sm font-bold text-soulin-dark flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-soulin-primary"></i> ออเดอร์ล่าสุด</h3>
+                                        <button type="button" onclick="switchAdminTab('orders')" class="text-[11px] font-semibold text-soulin-primary hover:underline">ดูทั้งหมด</button>
+                                    </div>
+                                    <div id="adm-recent-orders" class="space-y-2.5 text-xs"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tab 2: Stock Management -->
+                    <div id="adm-content-products" class="hidden space-y-5">
+                        <div class="bg-white p-4 rounded-2xl border border-emerald-100 smooth-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" id="adm-prod-filter-all" onclick="filterAdminProducts('all')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-soulin-primary text-white shadow-sm transition-all">ทั้งหมด (8)</button>
+                                <button type="button" id="adm-prod-filter-jar" onclick="filterAdminProducts('jar')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">กระปุก</button>
+                                <button type="button" id="adm-prod-filter-stick" onclick="filterAdminProducts('stick')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">แท่งลูกกลิ้ง</button>
+                                <button type="button" id="adm-prod-filter-low" onclick="filterAdminProducts('low')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-rose-50 transition-all">สต็อกใกล้หมด (&lt;10)</button>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="relative flex-1 sm:w-56">
+                                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                    <input type="text" id="adm-product-search" oninput="handleAdminProductSearch()" placeholder="ค้นหาชื่อสินค้าหรือกลิ่น..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35">
+                                </div>
+                                <button type="button" onclick="resetDefaultStock()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-200 transition-all whitespace-nowrap"><i class="fa-solid fa-rotate-left mr-1"></i>คืนค่าสต็อก</button>
+                                <button type="button" id="adm-cleanup-orphans-btn" onclick="runAdminOrphanImageCleanup()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold px-3.5 py-2 rounded-xl border border-rose-200 transition-all whitespace-nowrap"><i class="fa-solid fa-broom mr-1"></i>ล้างรูปค้าง</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl border border-emerald-100 overflow-x-auto smooth-shadow">
+                            <table class="w-full min-w-[700px] text-left text-xs sm:text-sm">
+                                <thead class="bg-soulin-mint/80 text-soulin-dark font-semibold border-b border-emerald-100">
+                                    <tr>
+                                        <th class="p-4">รูปภาพ</th><th class="p-4">ชื่อสินค้าและกลิ่น</th><th class="p-4">รูปแบบ</th><th class="p-4">ราคา</th><th class="p-4">สถานะสต็อก</th><th class="p-4 text-center">ปรับด่วน / แก้ไข</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-product-table-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tab 3: CMS Content Edit + Live Hero Preview -->
+                    <div id="adm-content-cms" class="hidden">
+                        <div class="bg-white p-6 rounded-3xl border border-emerald-100 smooth-shadow grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                            <div class="xl:col-span-7 space-y-4">
+                                <div class="border-b border-slate-100 pb-3">
+                                    <h3 class="text-base font-bold text-soulin-dark">ปรับแต่งข้อความและแบนเนอร์โฮมเพจ</h3>
+                                    <p class="text-[11px] text-slate-500">พิมพ์ข้อความหรืออัปโหลดรูปภาพแล้วดูตัวอย่างแบนเนอร์ฝั่งขวาได้ทันที</p>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <div><label class="block text-xs font-semibold text-slate-700 mb-1">หัวข้อแบนเนอร์หลัก</label><input type="text" id="cms-input-title" class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35"></div>
+                                    <div><label class="block text-xs font-semibold text-slate-700 mb-1">ข้อความแท็กสโลแกน</label><input type="text" id="cms-input-tag" class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35"></div>
+                                </div>
+                                <div><label class="block text-xs font-semibold text-slate-700 mb-1">คำอธิบายแบนเนอร์</label><textarea id="cms-input-subtitle" rows="3" class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35"></textarea></div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">อัปโหลดรูปภาพแบนเนอร์ใหม่</label>
+                                    <input type="file" id="cms-input-img-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-soulin-mint file:text-soulin-primary hover:file:bg-emerald-200 cursor-pointer border border-slate-200 rounded-xl p-1.5">
+                                    <input type="hidden" id="cms-input-img-data">
+                                    <div id="cms-img-preview-container" class="mt-2 hidden"><div class="flex flex-wrap items-center gap-3"><img id="cms-img-preview" src="" alt="Banner Preview" class="w-20 h-20 object-contain rounded-xl border p-1 bg-slate-50"><button type="button" id="cms-img-remove-btn" onclick="removeCmsBannerImage()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-xl transition-all"><i class="fa-solid fa-trash-can mr-1"></i>ลบรูปแบนเนอร์</button></div></div>
+                                </div>
+                                <button type="button" onclick="saveCMSChanges()" class="bg-soulin-primary text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl hover:bg-soulin-dark shadow-md transition-all inline-flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i> บันทึกการปรับแต่งเว็บเพจ</button>
+                            </div>
+                            <div class="xl:col-span-5 soulin-botanical-panel text-white rounded-3xl p-6 space-y-4 shadow-lg">
+                                <span class="text-[10px] uppercase tracking-widest text-emerald-200/80 font-semibold block">Live Storefront Hero Preview</span>
+                                <span id="cms-live-preview-tag" class="inline-block bg-white/15 text-soulin-light text-[11px] font-semibold px-3 py-1 rounded-full border border-white/20">SOULIN</span>
+                                <h4 id="cms-live-preview-title" class="text-xl font-bold leading-snug">SOULIN</h4>
+                                <p id="cms-live-preview-subtitle" class="text-xs text-emerald-100/85 leading-relaxed"></p>
+                                <div class="bg-white/95 rounded-2xl p-4 flex items-center justify-center"><img id="cms-live-preview-img" src="" alt="Live Hero Preview" class="w-36 h-36 object-contain"></div>
+                            </div>
+                        </div>
+                        <div id="admin-payment-settings-mount" class="mt-6"></div>
+                    </div>
+
+                    <!-- Admin Tab 4: Orders Inspection -->
+                    <div id="adm-content-orders" class="hidden space-y-5">
+                        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-emerald-100 smooth-shadow space-y-3.5">
+                            <div class="flex flex-wrap justify-between items-center gap-3">
+                                <div><h3 class="text-base font-bold text-soulin-dark">รายการคำสั่งซื้อของลูกค้า</h3><p class="text-[11px] text-slate-500">ตรวจสอบยอดเงิน ที่อยู่จัดส่ง และเปลี่ยนสถานะออเดอร์ได้ทันที</p></div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="openGoogleSheetModal()" class="bg-white hover:bg-emerald-50 text-soulin-primary border border-soulin-primary text-xs font-semibold px-3.5 py-2 rounded-xl transition-all inline-flex items-center gap-1.5"><i class="fa-solid fa-link"></i> ตั้งค่า Google Sheet</button>
+                                    <button type="button" onclick="exportOrdersToGoogleSheet()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-all inline-flex items-center gap-1.5"><i class="fa-solid fa-file-excel"></i> ส่งออก .CSV</button>
+                                </div>
+                            </div>
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <button type="button" id="adm-ord-filter-all" onclick="filterAdminOrders('all')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-soulin-primary text-white shadow-sm transition-all">ทั้งหมด</button>
+                                    <button type="button" id="adm-ord-filter-pending" onclick="filterAdminOrders('pending')" class="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">รอตรวจ</button>
+                                    <button type="button" id="adm-ord-filter-paid" onclick="filterAdminOrders('paid')" class="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">ชำระแล้ว</button>
+                                    <button type="button" id="adm-ord-filter-shipping" onclick="filterAdminOrders('shipping')" class="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">กำลังส่ง</button>
+                                    <button type="button" id="adm-ord-filter-done" onclick="filterAdminOrders('done')" class="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">สำเร็จ</button>
+                                    <button type="button" id="adm-ord-filter-cancelled" onclick="filterAdminOrders('cancelled')" class="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-rose-50 transition-all">ยกเลิก</button>
+                                </div>
+                                <div class="relative w-full lg:w-60">
+                                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                    <input type="text" id="adm-order-search" oninput="handleAdminOrderSearch()" placeholder="ค้นหาเลขที่ออเดอร์ / ชื่อลูกค้า..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl border border-emerald-100 overflow-hidden smooth-shadow">
+                            <div id="admin-orders-list" class="divide-y divide-slate-100"></div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tab 5: Audit Logs -->
+                    <div id="adm-content-logs" class="hidden space-y-5"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="storefront-footer" class="bg-soulin-dark text-white border-t border-emerald-900/30 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-soulin-light">
+                <div>
+                    <span class="text-base font-bold text-white block">SOULIN (Soul + Inhale)</span>
+                    <span>สูดความสดชื่น ลึกไปถึงดวงวิญญาณ</span>
+                </div>
+                <div class="flex flex-wrap items-center justify-center sm:justify-end gap-4">
+                    <a href="./privacy.html#privacy" class="hover:text-white transition-colors">นโยบายความเป็นส่วนตัว (PDPA)</a>
+                    <a href="./privacy.html#terms" class="hover:text-white transition-colors">ข้อกำหนดการใช้งาน</a>
+                    <button type="button" onclick="openPdpaPreferencesModal()" class="hover:text-white transition-colors">ตั้งค่าความเป็นส่วนตัว</button>
+                    <a href="./admin-login.html" class="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-shield text-[10px]"></i> ผู้ดูแลระบบ
+                    </a>
+                    <span>© 2026 SOULIN Brand Co., Ltd. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AUTHENTICATION MODAL -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 relative smooth-shadow space-y-6">
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="text-center space-y-1">
+                <h3 id="auth-modal-title" class="text-2xl font-bold text-soulin-dark">เข้าสู่ระบบ</h3>
+                <p class="text-xs text-slate-500">กรุณาล็อคอินเพื่อสั่งซื้อยาดม SOULIN</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้ใช้งาน (User)</label>
+                    <input type="text" id="login-username" required class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่าน (Pass)</label>
+                    <input type="password" id="login-password" required class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+                <button type="submit" class="w-full bg-soulin-primary text-white font-semibold py-3 rounded-xl hover:bg-soulin-dark transition-all text-xs sm:text-sm">
+                    เข้าสู่ระบบ
+                </button>
+                <div class="text-center text-xs text-slate-500 pt-2">
+                    ยังไม่มีบัญชี? <button type="button" onclick="toggleAuthMode('signup')" class="text-soulin-primary font-semibold hover:underline">สมัครสมาชิกที่นี่</button>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="signup-form" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-นามสกุล</label>
+                    <input type="text" id="signup-fullname" required class="w-full text-sm p-3 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้ใช้งาน (User)</label>
+                    <input type="text" id="signup-username" required class="w-full text-sm p-3 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่าน (Pass)</label>
+                    <input type="password" id="signup-password" required class="w-full text-sm p-3 border border-slate-200 rounded-xl">
+                </div>
+                <button type="submit" class="w-full bg-soulin-primary text-white font-semibold py-3 rounded-xl hover:bg-soulin-dark transition-all text-xs sm:text-sm">
+                    สมัครสมาชิก
+                </button>
+                <div class="text-center text-xs text-slate-500 pt-2">
+                    มีบัญชีอยู่แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-soulin-primary font-semibold hover:underline">เข้าสู่ระบบ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT PRODUCT MODAL FOR ADMIN -->
+    <div id="admin-edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative smooth-shadow border border-emerald-100 space-y-5">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 pr-6">
+                <div class="w-10 h-10 rounded-xl bg-soulin-dark text-amber-300 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-soulin-dark">แก้ไขข้อมูลและสต็อกสินค้า</h3>
+                    <p class="text-xs text-slate-500">ปรับราคา จำนวนสต็อก หรืออัปโหลดรูปภาพสินค้าใหม่</p>
+                </div>
+            </div>
+
+            <form onsubmit="saveProductEdit(event)" class="space-y-4">
+                <input type="hidden" id="edit-prod-id">
+                <input type="hidden" id="edit-prod-img-data">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสินค้า</label>
+                    <input type="text" id="edit-prod-name" required class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ราคา (บาท)</label>
+                        <input type="number" id="edit-prod-price" required min="1" class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนสต็อก (ชิ้น)</label>
+                        <input type="number" id="edit-prod-stock" required min="0" class="w-full text-xs sm:text-sm p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1"><label class="block text-xs font-semibold text-slate-700">เปลี่ยนรูปภาพสินค้า</label><button type="button" id="edit-prod-img-remove-btn" onclick="removeEditProductImage()" class="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline"><i class="fa-solid fa-trash-can mr-1"></i>ลบรูป (ใช้รูปเริ่มต้น)</button></div>
+                    <div class="flex items-center gap-3 mt-1">
+                        <img id="edit-prod-img-preview" src="" alt="Product Preview" class="w-16 h-16 object-contain rounded-xl border border-slate-200 p-1 bg-soulin-bg flex-shrink-0">
+                        <input type="file" id="edit-prod-img-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-soulin-mint file:text-soulin-primary hover:file:bg-emerald-200 cursor-pointer border border-slate-200 rounded-xl p-1.5">
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1.5">รองรับ JPG / PNG / WebP สูงสุด 5MB (อัปโหลดเก็บใน Supabase Storage อัตโนมัติ)</p>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="flex-1 bg-soulin-primary text-white font-semibold py-2.5 rounded-xl hover:bg-soulin-dark transition-all text-xs sm:text-sm">
+                        บันทึกการเปลี่ยนแปลง
+                    </button>
+                    <button type="button" onclick="closeEditModal()" class="bg-slate-100 text-slate-600 font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-200 transition-all text-xs sm:text-sm">
+                        ยกเลิก
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- GOOGLE SHEET WEBHOOK CONFIG MODAL -->
+    <div id="gsheet-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative smooth-shadow border border-emerald-100 space-y-4">
+            <button onclick="closeGoogleSheetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 pr-6">
+                <div class="w-10 h-10 rounded-xl bg-soulin-dark text-emerald-300 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <i class="fa-solid fa-table text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-soulin-dark">ซิงค์ข้อมูลเข้า Google Sheet</h3>
+                    <p class="text-[11px] text-slate-500">ส่งข้อมูลออเดอร์ใหม่เข้า Google Sheets ทันทีที่ลูกค้าสั่งซื้อ</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
+                    <input type="url" id="gsheet-webhook-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                    <p class="font-semibold text-slate-800">วิธีใช้งานแบบอัตโนมัติ:</p>
+                    <p>1. เปิด Google Sheet ของคุณ > เมนู <b>ส่วนขยาย (Extensions) > Apps Script</b></p>
+                    <p>2. วางโค้ดรับข้อมูลแล้วกด <b>ทำให้ใช้งานได้ (Deploy) > เว็บแอป</b> จากนั้นนำลิงก์มาวางด้านบน</p>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="saveGoogleSheetWebhook()" class="flex-1 bg-soulin-primary text-white font-semibold py-2.5 rounded-xl hover:bg-soulin-dark transition-all text-xs">
+                        บันทึกการเชื่อมต่อ
+                    </button>
+                    <button onclick="exportOrdersToGoogleSheet()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold px-4 py-2.5 rounded-xl hover:bg-emerald-100 transition-all text-xs">
+                        ดาวน์โหลดไฟล์ Sheet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHIPPING ADDRESS BOOK & FORM MODAL -->
+    <div id="address-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative smooth-shadow space-y-5">
+            <button type="button" onclick="closeAddressModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Address Picker List -->
+            <div id="checkout-address-picker" class="space-y-4">
+                <div>
+                    <h3 class="text-lg font-bold text-soulin-dark">เลือกที่อยู่จัดส่งสินค้า</h3>
+                    <p class="text-xs text-slate-500">เลือกจากสมุดที่อยู่ที่บันทึกไว้ หรือเพิ่มที่อยู่ใหม่</p>
+                </div>
+
+                <div id="checkout-address-list" class="space-y-3"></div>
+
+                <button type="button" onclick="openCheckoutAddressForm()" class="w-full border-2 border-dashed border-emerald-200 hover:border-soulin-primary text-soulin-primary hover:bg-soulin-mint/50 font-semibold py-3 rounded-2xl transition-all text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> เพิ่มที่อยู่จัดส่งใหม่
+                </button>
+            </div>
+
+            <!-- Structured Thai Address Form -->
+            <div id="checkout-address-form-wrap" class="hidden space-y-4">
+                <div class="flex items-center gap-2 pr-8">
+                    <button type="button" onclick="showCheckoutAddressPicker()" class="text-slate-500 hover:text-soulin-primary p-1.5 rounded-lg hover:bg-slate-100">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 id="addr-form-title" class="text-lg font-bold text-soulin-dark">เพิ่มที่อยู่จัดส่งใหม่</h3>
+                        <p class="text-[11px] text-slate-500">กรอกข้อมูลผู้รับและที่อยู่ให้ครบถ้วนเพื่อการจัดส่งที่รวดเร็ว</p>
+                    </div>
+                </div>
+
+                <form id="checkout-address-form" onsubmit="handleCheckoutAddressSubmit(event)" class="space-y-3.5">
+                    <input type="hidden" id="addr-edit-id">
+                    <input type="hidden" id="addr-label" value="บ้าน">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="addr-recipient" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-นามสกุลผู้รับ *</label>
+                            <input type="text" id="addr-recipient" required placeholder="ชื่อผู้รับสินค้า" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                        </div>
+                        <div>
+                            <label for="addr-phone" class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ *</label>
+                            <input type="tel" id="addr-phone" required placeholder="08X-XXX-XXXX" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="addr-province" class="block text-xs font-semibold text-slate-700 mb-1">จังหวัด *</label>
+                            <select id="addr-province" required onchange="handleProvinceCascade('addr')" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                                <option value="">-- เลือกจังหวัด --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label id="addr-district-label" for="addr-district" class="block text-xs font-semibold text-slate-700 mb-1">เขต / อำเภอ *</label>
+                            <select id="addr-district" required disabled onchange="handleDistrictCascade('addr')" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                                <option value="">-- เลือกจังหวัดก่อน --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label id="addr-subdistrict-label" for="addr-subdistrict" class="block text-xs font-semibold text-slate-700 mb-1">แขวง / ตำบล *</label>
+                            <select id="addr-subdistrict" required disabled onchange="handleSubdistrictCascade('addr')" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                                <option value="">-- เลือกอำเภอ/เขตก่อน --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="addr-postal" class="block text-xs font-semibold text-slate-700 mb-1">รหัสไปรษณีย์ (5 หลัก) *</label>
+                            <select id="addr-postal" required disabled class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                                <option value="">-- เลือกตำบล/แขวงก่อน --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="addr-street" class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่ ซอย หมู่ ถนน ชื่ออาคาร *</label>
+                        <textarea id="addr-street" rows="2" required placeholder="เช่น 99/12 หมู่ 4 ซ.สุขุมวิท 21 อาคาร..." class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="addr-note" class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุถึงคนส่งของ <span class="text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                        <input type="text" id="addr-note" placeholder="เช่น โทรแจ้งก่อนถึง หรือ ฝากป้อมยาม" class="w-full text-xs sm:text-sm p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary">
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-slate-600">ป้ายกำกับ:</span>
+                            <button type="button" id="addr-label-home" onclick="setCheckoutAddressLabel('บ้าน')" class="px-3 py-1 rounded-lg text-xs font-semibold border border-soulin-primary bg-soulin-mint text-soulin-primary">บ้าน</button>
+                            <button type="button" id="addr-label-work" onclick="setCheckoutAddressLabel('ที่ทำงาน')" class="px-3 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white text-slate-600">ที่ทำงาน</button>
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                            <input type="checkbox" id="addr-default" class="w-4 h-4 rounded border-slate-300 text-soulin-primary focus:ring-soulin-primary">
+                            <span>ตั้งเป็นค่าเริ่มต้น</span>
+                        </label>
+                    </div>
+
+                    <div id="addr-form-error" role="alert" class="hidden text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl"></div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="showCheckoutAddressPicker()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 py-2.5 rounded-xl text-xs">
+                            ย้อนกลับ
+                        </button>
+                        <button type="submit" class="flex-1 bg-soulin-primary hover:bg-soulin-dark text-white font-semibold py-2.5 rounded-xl shadow text-xs sm:text-sm transition-all">
+                            บันทึกที่อยู่จัดส่ง
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENT, SLIP & PDPA MODALS -->
+    <div id="payment-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+    <div id="slip-preview-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+    <div id="pdpa-consent-banner" class="fixed bottom-4 inset-x-4 z-40 hidden"></div>
+    <div id="pdpa-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+
+</body>
+</html>

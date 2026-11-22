@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>นโยบายความเป็นส่วนตัว (PDPA) และข้อกำหนดการใช้งาน | SOULIN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/styles.css">
+    <script defer src="./js/catalog-data.js"></script>
+    <script defer src="./js/store.js"></script>
+    <script defer src="./js/toast.js"></script>
+    <script defer src="./js/pdpa.js"></script>
+</head>
+<body class="min-h-screen soulin-auth-bg custom-scrollbar antialiased flex flex-col justify-between">
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-3">
+            <a href="./soulin.html" class="flex items-center gap-2.5 text-soulin-dark hover:text-soulin-primary font-semibold text-xs sm:text-sm">
+                <span class="w-9 h-9 bg-soulin-mint rounded-xl flex items-center justify-center border border-emerald-200"><i class="fa-solid fa-arrow-left text-xs"></i></span>
+                <span>กลับหน้าร้าน SOULIN</span>
+            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="#privacy" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-soulin-mint text-soulin-primary hover:bg-emerald-100">PDPA</a>
+                <a href="#terms" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">ข้อกำหนดใช้งาน</a>
+                <button type="button" onclick="openPdpaPreferencesModal()" class="text-xs font-semibold px-3.5 py-1.5 rounded-xl bg-soulin-primary hover:bg-soulin-dark text-white shadow-sm transition-all">
+                    <i class="fa-solid fa-sliders mr-1"></i>ตั้งค่าความเป็นส่วนตัว
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10 space-y-8">
+        <section class="soulin-botanical-panel text-white rounded-3xl p-7 sm:p-10 space-y-3 shadow-lg">
+            <span class="inline-block text-[11px] font-semibold uppercase tracking-wider bg-white/15 text-soulin-light px-3 py-1 rounded-full border border-white/20">SOULIN Legal &amp; Compliance • เวอร์ชัน 2026-11-v1</span>
+            <h1 class="text-2xl sm:text-3xl font-bold leading-snug">นโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA) และข้อกำหนดการใช้งานเว็บไซต์</h1>
+            <p class="text-xs sm:text-sm text-emerald-100/90 max-w-3xl leading-relaxed">บริษัท โซลอิน แบรนด์ จำกัด (SOULIN Brand Co., Ltd.) เคารพสิทธิความเป็นส่วนตัวของลูกค้าทุกท่าน และดำเนินการตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) อย่างเคร่งครัด</p>
+        </section>
+
+        <!-- SECTION 1: PRIVACY POLICY (PDPA) -->
+        <article id="privacy" class="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 smooth-shadow space-y-6">
+            <div class="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-xl font-bold text-soulin-dark flex items-center gap-2"><i class="fa-solid fa-shield-halved text-soulin-primary"></i> นโยบายความเป็นส่วนตัว (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562)</h2>
+                    <p class="text-xs text-slate-500 mt-1">มีผลบังคับใช้ตั้งแต่วันที่ 22 พฤศจิกายน 2569</p>
+                </div>
+                <button type="button" onclick="openPdpaPreferencesModal()" class="text-xs font-semibold text-soulin-primary bg-soulin-mint px-3.5 py-2 rounded-xl hover:bg-emerald-100">จัดการความยินยอมของฉัน</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">1. ข้อมูลส่วนบุคคลที่เราเก็บรวบรวม</h3>
+                    <p>เราเก็บเฉพาะข้อมูลที่จำเป็นต่อการให้บริการ ได้แก่ ชื่อ-นามสกุล, ชื่อผู้ใช้งาน, เบอร์โทรศัพท์, อีเมล/รูปโปรไฟล์จาก Google (เมื่อท่านเลือก Sign in with Google), ที่อยู่จัดส่งสินค้า, ประวัติคำสั่งซื้อ, รูปภาพสลิปการโอนเงิน และบันทึกเหตุการณ์ความปลอดภัย (Audit Log)</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">2. วัตถุประสงค์และฐานทางกฎหมาย</h3>
+                    <p><strong>ฐานสัญญา:</strong> เพื่อดำเนินการสั่งซื้อ ออกใบยืนยัน และจัดส่งสินค้า • <strong>ฐานกฎหมาย:</strong> เพื่อจัดทำหลักฐานบัญชี/การเงิน • <strong>ฐานประโยชน์โดยชอบธรรม:</strong> ป้องกันการทุจริตและตรวจสลิป • <strong>ฐานความยินยอม:</strong> เพื่อการวิเคราะห์ปรับปรุงเว็บและข่าวสารโปรโมชั่น</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">3. การเปิดเผยข้อมูลต่อผู้ให้บริการภายนอก</h3>
+                    <p>SOULIN ไม่จำหน่ายข้อมูลส่วนบุคคลของท่านให้บุคคลภายนอก แต่จะส่งข้อมูลเท่าที่จำเป็นให้ผู้ประมวลผลข้อมูลเพื่อการบริการ ได้แก่ ระบบฐานข้อมูลและจัดเก็บไฟล์คลาวด์ (Supabase), ระบบยืนยันตัวตน (Google OAuth 2.0) และบริษัทขนส่งพัสดุ</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">4. ระยะเวลาการจัดเก็บและการลบไฟล์</h3>
+                    <p>ข้อมูลบัญชีและประวัติคำสั่งซื้อจะถูกเก็บรักษาตลอดอายุสมาชิกและตามระยะเวลาที่กฎหมายบัญญัติ ส่วนไฟล์รูปภาพสลิปหรือไฟล์ชั่วคราวที่ถูกยกเลิกหรือแทนที่จะถูกลบออกจาก Supabase Storage โดยอัตโนมัติ</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">5. มาตรการรักษาความมั่นคงปลอดภัย</h3>
+                    <p>รหัสผ่านของสมาชิกถูกเข้ารหัส (SHA-256 + Salt) ไม่เก็บเป็นข้อความธรรมดา จำกัดสิทธิ์การเข้าถึงฐานข้อมูลด้วย Row Level Security (RLS) และมีระบบ Audit Log แบบ Append-Only ที่ไม่สามารถลบแก้ไขย้อนหลังเพื่อตรวจสอบความโปร่งใส</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">6. สิทธิของเจ้าของข้อมูลส่วนบุคคล (7 ประการ)</h3>
+                    <p>ท่านมีสิทธิ (1) ขอเข้าถึงและขอรับสำเนาข้อมูล (2) ขอแก้ไขให้ถูกต้อง (3) ขอลบหรือทำลายข้อมูล (4) ขอระงับการใช้ชั่วคราว (5) ขอรับหรือโอนย้ายข้อมูล (6) คัดค้านการประมวลผล และ (7) ถอนความยินยอมเมื่อใดก็ได้โดยไม่กระทบการดำเนินการก่อนหน้า</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">7. การใช้ Cookies และ LocalStorage</h3>
+                    <p>เว็บไซต์ใช้พื้นที่จัดเก็บในเบราว์เซอร์ (LocalStorage / SessionStorage) เพื่อจำสถานะการเข้าสู่ระบบ ตะกร้าสินค้า ที่อยู่จัดส่ง และค่าความยินยอม PDPA ของท่าน ท่านสามารถปรับเปลี่ยนการยินยอมส่วนที่ไม่จำเป็นได้ตลอดเวลา</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-soulin-mint/40 border border-emerald-200 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">8. ช่องทางติดต่อผู้ควบคุมข้อมูลส่วนบุคคล (DPO)</h3>
+                    <p>หากต้องการใช้สิทธิตาม PDPA หรือสอบถามข้อมูลเพิ่มเติม ติดต่อ: <strong>SOULIN Brand Co., Ltd. (ฝ่ายคุ้มครองข้อมูลส่วนบุคคล)</strong> • อีเมล: <strong>privacy@soulin-herbal.example</strong></p>
+                </section>
+            </div>
+        </article>
+
+        <!-- SECTION 2: TERMS OF USE -->
+        <article id="terms" class="bg-white rounded-3xl border border-emerald-100 p-6 sm:p-8 smooth-shadow space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold text-soulin-dark flex items-center gap-2"><i class="fa-solid fa-file-contract text-soulin-primary"></i> ข้อกำหนดและเงื่อนไขการใช้งานเว็บไซต์ (Terms of Use)</h2>
+                <p class="text-xs text-slate-500 mt-1">การใช้งานเว็บไซต์และส่งคำสั่งซื้อผ่าน SOULIN ถือว่าท่านได้อ่าน เข้าใจ และยอมรับเงื่อนไขดังต่อไปนี้</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">1. บัญชีผู้ใช้งานและความรับผิดชอบ</h3>
+                    <p>ผู้ใช้งานต้องให้ข้อมูลที่เป็นความจริงในการสมัครสมาชิกและที่อยู่จัดส่ง และรักษาความลับของรหัสผ่านบัญชีตนเอง ห้ามแอบอ้างบุคคลอื่นหรือเข้าถึงส่วนผู้ดูแลระบบโดยไม่ได้รับอนุญาต</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">2. สินค้า ราคา และโปรโมชั่น</h3>
+                    <p>ราคาสินค้าแสดงเป็นสกุลเงินบาท (THB) โดยมียอดค่าจัดส่งเหมาจ่าย 40 บาท และโปรโมชั่นส่วนลดอัตโนมัติ 50 บาท เมื่อซื้อสินค้าครบ 500 บาทขึ้นไป สินค้าทุกชิ้นอ้างอิงตามจำนวนสต็อกคงเหลือจริง</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">3. การชำระเงินและตรวจหลักฐานโอนเงิน</h3>
+                    <p>รองรับ PromptPay QR มาตรฐาน EMVCo พร้อมแนบสลิป และบริการเก็บเงินปลายทาง (COD) สำหรับรายการโอนเงิน แอดมินจะตรวจสอบยอดเงินและสลิปจริงก่อนยืนยันจัดส่ง หากพบสลิปไม่ถูกต้องร้านขอสงวนสิทธิ์ปฏิเสธคำสั่งซื้อ</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">4. การยกเลิกคำสั่งซื้อและการคืนสต็อก</h3>
+                    <p>หากคำสั่งซื้อถูกยกเลิกหรือปฏิเสธสลิปก่อนจัดส่ง ระบบจะคืนจำนวนสินค้ากลับเข้าคลังสินค้าอัตโนมัติ กรณีชำระเงินซ้ำหรือยอดเกินสามารถติดต่อฝ่ายบริการลูกค้าพร้อมหลักฐานคำสั่งซื้อเพื่อดำเนินการคืนเงิน</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">5. ทรัพย์สินทางปัญญาและข้อห้ามใช้งาน</h3>
+                    <p>เครื่องหมายการค้า SOULIN ข้อความ ภาพสินค้า และซอร์สโค้ดบนเว็บไซต์เป็นลิขสิทธิ์ของร้าน ห้ามทำซ้ำ ดัดแปลง ดึงข้อมูลอัตโนมัติ หรืออัปโหลดไฟล์ที่เป็นอันตรายเข้าสู่ระบบ</p>
+                </section>
+                <section class="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1.5">
+                    <h3 class="font-bold text-soulin-dark">6. การปรับปรุงข้อกำหนดและกฎหมายที่ใช้บังคับ</h3>
+                    <p>SOULIN ขอสงวนสิทธิ์ปรับปรุงนโยบายหรือข้อกำหนดการใช้งานตามความเหมาะสมโดยจะระบุเลขเวอร์ชันล่าสุดไว้อย่างชัดเจน ข้อกำหนดนี้อยู่ภายใต้บังคับแห่งกฎหมายราชอาณาจักรไทย</p>
+                </section>
+            </div>
+        </article>
+    </main>
+
+    <footer class="bg-soulin-dark text-white border-t border-emerald-900/30 mt-10">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-7 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-soulin-light">
+            <span><strong>SOULIN</strong> — สูดความสดชื่น ลึกไปถึงดวงวิญญาณ</span>
+            <span>© 2026 SOULIN Brand Co., Ltd. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <div id="pdpa-consent-banner" class="fixed bottom-4 inset-x-4 z-40 hidden"></div>
+    <div id="pdpa-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+</body>
+</html>

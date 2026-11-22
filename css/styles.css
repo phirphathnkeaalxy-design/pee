@@ -1,0 +1,99 @@
+body {
+    font-family: 'Prompt', sans-serif;
+    background-color: #F4F8F5;
+    color: #2D3748;
+}
+
+.smooth-shadow {
+    box-shadow: 0 10px 25px -5px rgba(45, 90, 66, 0.07);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #E8F5E9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #A3C4BC;
+    border-radius: 4px;
+}
+
+.soulin-botanical-panel {
+    background-color: #163224;
+    background-image:
+        radial-gradient(circle at 18% 20%, rgba(224, 169, 109, 0.16), transparent 46%),
+        radial-gradient(circle at 85% 82%, rgba(163, 196, 188, 0.16), transparent 48%),
+        linear-gradient(155deg, #13291E 0%, #1B3B2B 52%, #264D38 100%);
+}
+
+.soulin-auth-bg {
+    background-color: #F4F8F5;
+    background-image:
+        radial-gradient(circle at 90% 10%, rgba(163, 196, 188, 0.25), transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(224, 169, 109, 0.12), transparent 42%);
+}
+
+.soulin-input {
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+@keyframes soulinFadeRise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-rise {
+    animation: soulinFadeRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-delay-1 {
+    animation-delay: 0.08s;
+}
+
+.animate-delay-2 {
+    animation-delay: 0.16s;
+}
+
+.animate-delay-3 {
+    animation-delay: 0.24s;
+}
+
+.soulin-admin-vault-bg {
+    background-color: #0B1611;
+    background-image:
+        radial-gradient(circle at 15% 15%, rgba(45, 90, 66, 0.34), transparent 48%),
+        radial-gradient(circle at 88% 82%, rgba(224, 169, 109, 0.14), transparent 44%),
+        linear-gradient(155deg, #0A140F 0%, #102119 52%, #0F172A 100%);
+}
+
+.soulin-admin-panel-border {
+    border: 1px solid rgba(163, 196, 188, 0.24);
+    box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.45);
+}
+
+.soulin-kpi-card {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.soulin-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px -10px rgba(30, 62, 43, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-rise,
+    .animate-delay-1,
+    .animate-delay-2,
+    .animate-delay-3 {
+        animation: none;
+    }
+}

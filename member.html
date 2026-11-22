@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บัญชีสมาชิกของฉัน | SOULIN (โซลอิน)</title>
+    <!-- Tailwind CSS CDN & Theme Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="./css/styles.css">
+
+    <!-- Application Modules (Ordered Dependency DAG, file:// & HTTP compatible) -->
+    <script defer src="./js/catalog-data.js"></script>
+    <script defer src="./js/store.js"></script>
+    <script defer src="./js/toast.js"></script>
+    <script defer src="./js/auth.js"></script>
+    <script defer src="./js/thai-address-data.js"></script>
+    <script defer src="./js/address-book.js"></script>
+    <script defer src="./js/orders.js"></script>
+    <script defer src="./js/supabase-config.js"></script>
+    <script defer src="./js/cloud-sync.js"></script>
+    <script defer src="./js/member-page.js"></script>
+</head>
+<body class="min-h-screen soulin-auth-bg custom-scrollbar flex flex-col justify-between antialiased">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MEMBER TOP NAVBAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="./soulin.html" class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-soulin-mint rounded-2xl flex items-center justify-center text-soulin-primary border border-emerald-200/60 shadow-inner">
+                        <i class="fa-solid fa-leaf text-lg text-soulin-primary"></i>
+                    </div>
+                    <div>
+                        <span class="font-serif text-2xl font-semibold tracking-[0.18em] text-soulin-dark block leading-none">SOULIN</span>
+                        <span class="text-[10px] tracking-wider text-soulin-medium uppercase">Member Sanctuary</span>
+                    </div>
+                </a>
+
+                <nav class="flex items-center gap-2 sm:gap-4">
+                    <a href="./soulin.html" class="text-xs sm:text-sm font-medium text-slate-600 hover:text-soulin-primary px-3 py-2 rounded-xl hover:bg-soulin-mint/60 transition-all">
+                        <i class="fa-solid fa-house mr-1"></i> หน้าร้าน
+                    </a>
+                    <a href="./soulin.html?tab=products" class="hidden sm:inline-flex items-center text-sm font-medium text-slate-600 hover:text-soulin-primary px-3 py-2 rounded-xl hover:bg-soulin-mint/60 transition-all">
+                        รายการสินค้า
+                    </a>
+                    <a href="./soulin.html?tab=cart" class="relative inline-flex items-center gap-2 bg-soulin-mint/80 hover:bg-soulin-mint text-soulin-dark text-xs font-semibold px-3.5 py-2 rounded-xl border border-emerald-200/70 transition-all">
+                        <i class="fa-solid fa-bag-shopping text-soulin-primary"></i>
+                        <span class="hidden sm:inline">ตะกร้าสินค้า</span>
+                        <span id="member-nav-cart-badge" class="hidden bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">0</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- GUEST GUARD FALLBACK -->
+        <section id="member-guest-guard" class="hidden max-w-md mx-auto bg-white rounded-3xl border border-emerald-100 smooth-shadow p-8 text-center space-y-5 my-12">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-soulin-mint text-soulin-primary flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div class="space-y-2">
+                <h1 class="text-xl font-bold text-soulin-dark">สำหรับสมาชิกลูกค้า SOULIN</h1>
+                <p class="text-xs text-slate-500 leading-relaxed">กรุณาเข้าสู่ระบบเพื่อดูข้อมูลคำสั่งซื้อ ที่อยู่จัดส่ง และตั้งค่าบัญชีของคุณ</p>
+            </div>
+            <a href="./login.html?redirect=member" class="block w-full bg-soulin-primary hover:bg-soulin-dark text-white text-xs sm:text-sm font-semibold py-3 rounded-xl shadow-md transition-all">
+                ไปหน้าเข้าสู่ระบบสมาชิก
+            </a>
+        </section>
+
+        <!-- AUTHENTICATED MEMBER PORTAL -->
+        <div id="member-portal-content" class="hidden space-y-8">
+
+            <!-- BOTANICAL WELCOME HERO -->
+            <section class="soulin-botanical-panel text-white rounded-3xl p-6 sm:p-10 relative overflow-hidden shadow-xl animate-fade-rise">
+                <svg aria-hidden="true" viewBox="0 0 240 240" class="pointer-events-none absolute -right-10 -bottom-10 w-60 h-60 text-emerald-200/10">
+                    <path fill="currentColor" d="M198 22C125 22 63 65 44 134c-8 29-3 60 12 84 23-39 58-73 102-96-37 31-67 68-86 108 32 8 67 2 95-19 52-39 67-115 31-189z" />
+                </svg>
+
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-4 sm:gap-5">
+                        <div id="member-avatar-initials" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/95 text-soulin-dark font-serif text-2xl sm:text-3xl font-bold flex items-center justify-center shadow-lg border-2 border-soulin-accent/60 flex-shrink-0">
+                            S
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span id="member-tier-badge" class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full border bg-white/15 text-soulin-light border-white/25">Botanical Member</span>
+                                <span id="member-google-badge" class="hidden inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white/95 text-slate-700 shadow-sm"><i class="fa-brands fa-google text-emerald-700"></i> Google</span>
+                                <span id="member-username-handle" class="text-xs text-emerald-200/80">@member</span>
+                            </div>
+                            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">สวัสดี, <span id="member-display-name">ลูกค้า SOULIN</span></h1>
+                            <p class="text-xs text-emerald-100/80">ยินดีต้อนรับสู่พื้นที่สมาชิกส่วนตัวของคุณ</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <a href="./soulin.html?tab=products" class="bg-white text-soulin-dark hover:bg-soulin-mint text-xs font-semibold px-4 py-2.5 rounded-xl shadow transition-all inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-bag-shopping"></i> ช้อปสินค้าต่อ
+                        </a>
+                        <a id="member-admin-link" href="./soulin.html?tab=admin" class="hidden bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-300/40 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-shield"></i> ระบบแอดมิน
+                        </a>
+                        <button type="button" onclick="handleMemberLogout()" class="bg-red-500/20 hover:bg-red-500 text-red-100 hover:text-white border border-red-400/40 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3 MEMBER KPI STATS -->
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 animate-fade-rise animate-delay-1">
+                <div class="bg-white p-6 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-slate-500 font-semibold block">คำสั่งซื้อทั้งหมด</span>
+                        <span id="member-stat-orders" class="text-2xl sm:text-3xl font-bold text-soulin-dark mt-1 block">0 ออเดอร์</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-soulin-mint text-soulin-primary flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-emerald-100 smooth-shadow flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-slate-500 font-semibold block">ยอดซื้อสะสม</span>
+                        <span id="member-stat-spent" class="text-2xl sm:text-3xl font-bold text-soulin-primary mt-1 block">0 ฿</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                </div>
+
+                <a href="./soulin.html?tab=cart" class="bg-white p-6 rounded-2xl border border-emerald-100 hover:border-soulin-light smooth-shadow flex items-center justify-between transition-all">
+                    <div>
+                        <span class="text-xs text-slate-500 font-semibold block">สินค้าในตะกร้า</span>
+                        <span id="member-stat-cart" class="text-2xl sm:text-3xl font-bold text-soulin-dark mt-1 block">0 ชิ้น</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                </a>
+            </section>
+
+            <!-- PORTAL TABS NAVIGATION -->
+            <div class="flex space-x-2 border-b border-slate-200 overflow-x-auto whitespace-nowrap animate-fade-rise animate-delay-2">
+                <button type="button" id="member-tab-orders" onclick="switchMemberTab('orders')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-soulin-primary text-soulin-primary whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-truck-fast mr-1.5"></i> คำสั่งซื้อและการจัดส่ง
+                </button>
+                <button type="button" id="member-tab-profile" onclick="switchMemberTab('profile')" class="px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-soulin-dark whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-address-card mr-1.5"></i> ข้อมูลส่วนตัว & ที่อยู่จัดส่ง
+                </button>
+                <button type="button" id="member-tab-security" onclick="switchMemberTab('security')" class="px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-soulin-dark whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-shield-halved mr-1.5"></i> ความปลอดภัย & รหัสผ่าน
+                </button>
+            </div>
+
+            <!-- PANEL 1: ORDERS & TRACKING -->
+            <section id="member-panel-orders" class="space-y-5 animate-fade-rise animate-delay-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="member-filter-all" onclick="filterMemberOrders('all')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-soulin-primary text-white shadow-sm transition-all">ทั้งหมด</button>
+                    <button type="button" id="member-filter-pending" onclick="filterMemberOrders('pending')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">รอจัดส่ง</button>
+                    <button type="button" id="member-filter-shipping" onclick="filterMemberOrders('shipping')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">กำลังจัดส่ง</button>
+                    <button type="button" id="member-filter-completed" onclick="filterMemberOrders('completed')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">จัดส่งสำเร็จ</button>
+                    <button type="button" id="member-filter-cancelled" onclick="filterMemberOrders('cancelled')" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-soulin-mint transition-all">ยกเลิก</button>
+                </div>
+
+                <div id="member-orders-list" class="space-y-4"></div>
+            </section>
+
+            <!-- PANEL 2: PROFILE & STRUCTURED ADDRESS BOOK -->
+            <section id="member-panel-profile" class="hidden max-w-3xl space-y-6">
+                <div class="bg-white rounded-3xl border border-emerald-100 smooth-shadow p-6 sm:p-8 space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-soulin-dark">ข้อมูลส่วนตัว</h2>
+                        <p class="text-xs text-slate-500 mt-1">จัดการชื่อแสดงผลและเบอร์โทรศัพท์ติดต่อของคุณ</p>
+                    </div>
+
+                    <form id="member-profile-form" onsubmit="handleMemberProfileSubmit(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="member-username-readonly" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
+                                <input type="text" id="member-username-readonly" readonly class="w-full text-sm px-3.5 py-3 border border-slate-200 rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label for="member-phone" class="block text-xs font-semibold text-slate-700 mb-1.5">เบอร์โทรศัพท์</label>
+                                <input type="tel" id="member-phone" placeholder="08X-XXX-XXXX" class="soulin-input w-full text-sm px-3.5 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="member-fullname" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อ-นามสกุล</label>
+                            <input type="text" id="member-fullname" required class="soulin-input w-full text-sm px-3.5 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                        </div>
+
+                        <div id="member-profile-feedback" role="status" class="hidden"></div>
+
+                        <button type="submit" class="bg-soulin-primary hover:bg-soulin-dark text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl shadow-md transition-all inline-flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลส่วนตัว
+                        </button>
+                    </form>
+                </div>
+
+                <!-- STRUCTURED ADDRESS BOOK CARD -->
+                <div class="bg-white rounded-3xl border border-emerald-100 smooth-shadow p-6 sm:p-8 space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-soulin-dark">สมุดที่อยู่จัดส่งของฉัน</h2>
+                            <p class="text-xs text-slate-500 mt-1">ที่อยู่เริ่มต้นจะถูกเลือกให้อัตโนมัติในหน้าตะกร้าสินค้า</p>
+                        </div>
+                        <button type="button" onclick="openMemberAddressForm()" class="bg-soulin-mint hover:bg-emerald-100 text-soulin-primary text-xs font-semibold px-4 py-2.5 rounded-xl border border-emerald-200 transition-all inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> เพิ่มที่อยู่ใหม่
+                        </button>
+                    </div>
+
+                    <div id="member-address-book-list" class="space-y-3"></div>
+
+                    <!-- Add/Edit Structured Thai Address Form -->
+                    <div id="member-address-form-card" class="hidden rounded-2xl border border-emerald-200 bg-soulin-bg/50 p-5 sm:p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 id="m-addr-form-title" class="text-base font-bold text-soulin-dark">เพิ่มที่อยู่จัดส่งใหม่</h3>
+                            <button type="button" onclick="closeMemberAddressForm()" class="text-slate-400 hover:text-slate-600 p-1">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <form id="member-address-form" onsubmit="handleMemberAddressSubmit(event)" class="space-y-4">
+                            <input type="hidden" id="m-addr-id">
+                            <input type="hidden" id="m-addr-label" value="บ้าน">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="m-addr-recipient" class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อ-นามสกุลผู้รับ *</label>
+                                    <input type="text" id="m-addr-recipient" required placeholder="ชื่อผู้รับสินค้า" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                </div>
+                                <div>
+                                    <label for="m-addr-phone" class="block text-xs font-semibold text-slate-700 mb-1.5">เบอร์โทรศัพท์ *</label>
+                                    <input type="tel" id="m-addr-phone" required placeholder="08X-XXX-XXXX" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="m-addr-province" class="block text-xs font-semibold text-slate-700 mb-1.5">จังหวัด *</label>
+                                    <select id="m-addr-province" required onchange="handleProvinceCascade('m-addr')" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                        <option value="">-- เลือกจังหวัด --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label id="m-addr-district-label" for="m-addr-district" class="block text-xs font-semibold text-slate-700 mb-1.5">เขต / อำเภอ *</label>
+                                    <select id="m-addr-district" required disabled onchange="handleDistrictCascade('m-addr')" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                        <option value="">-- เลือกจังหวัดก่อน --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="m-addr-subdistrict-label" for="m-addr-subdistrict" class="block text-xs font-semibold text-slate-700 mb-1.5">แขวง / ตำบล *</label>
+                                    <select id="m-addr-subdistrict" required disabled onchange="handleSubdistrictCascade('m-addr')" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                        <option value="">-- เลือกอำเภอ/เขตก่อน --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="m-addr-postal" class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสไปรษณีย์ (5 หลัก) *</label>
+                                    <select id="m-addr-postal" required disabled class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                        <option value="">-- เลือกตำบล/แขวงก่อน --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="m-addr-street" class="block text-xs font-semibold text-slate-700 mb-1.5">บ้านเลขที่ ซอย หมู่ ถนน ชื่ออาคาร *</label>
+                                <textarea id="m-addr-street" rows="2" required placeholder="เช่น 88/9 หมู่ 4 ซ.สุขุมวิท..." class="soulin-input w-full text-sm p-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary"></textarea>
+                            </div>
+
+                            <div>
+                                <label for="m-addr-note" class="block text-xs font-semibold text-slate-700 mb-1.5">หมายเหตุถึงคนส่งของ <span class="text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                                <input type="text" id="m-addr-note" placeholder="เช่น โทรแจ้งก่อนเข้าส่ง" class="soulin-input w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold text-slate-600">ป้ายกำกับ:</span>
+                                    <button type="button" id="m-addr-label-home" onclick="setMemberAddressLabel('บ้าน')" class="px-3 py-1 rounded-lg text-xs font-semibold border border-soulin-primary bg-soulin-mint text-soulin-primary">บ้าน</button>
+                                    <button type="button" id="m-addr-label-work" onclick="setMemberAddressLabel('ที่ทำงาน')" class="px-3 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white text-slate-600">ที่ทำงาน</button>
+                                </div>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                                    <input type="checkbox" id="m-addr-default" class="w-4 h-4 rounded border-slate-300 text-soulin-primary focus:ring-soulin-primary">
+                                    <span>ตั้งเป็นที่อยู่จัดส่งเริ่มต้น</span>
+                                </label>
+                            </div>
+
+                            <div id="m-addr-error" role="alert" class="hidden"></div>
+
+                            <div class="flex gap-2.5 pt-1">
+                                <button type="button" onclick="closeMemberAddressForm()" class="bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold px-4 py-2.5 rounded-xl text-xs">
+                                    ยกเลิก
+                                </button>
+                                <button type="submit" class="bg-soulin-primary hover:bg-soulin-dark text-white font-semibold px-6 py-2.5 rounded-xl shadow text-xs sm:text-sm transition-all">
+                                    บันทึกที่อยู่จัดส่ง
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL 3: PASSWORD & SECURITY -->
+            <section id="member-panel-security" class="hidden max-w-xl">
+                <div class="bg-white rounded-3xl border border-emerald-100 smooth-shadow p-6 sm:p-8 space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-soulin-dark">เปลี่ยนรหัสผ่านบัญชี</h2>
+                        <p class="text-xs text-slate-500 mt-1">ตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร เพื่อความปลอดภัยของบัญชีคุณ</p>
+                    </div>
+
+                    <div id="member-admin-password-note" class="hidden bg-amber-50 border border-amber-200 text-amber-800 text-xs p-4 rounded-2xl">
+                        บัญชีผู้ดูแลระบบเริ่มต้น (Admin) ใช้รหัสผ่านมาตรฐานของระบบ ไม่สามารถเปลี่ยนจากหน้าสมาชิกนี้ได้
+                    </div>
+
+                    <div id="member-google-password-note" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-4 rounded-2xl">
+                        บัญชีนี้เข้าสู่ระบบด้วย Google ไม่ต้องตั้งรหัสผ่านแยก — คุณสามารถจัดการความปลอดภัยได้ที่บัญชี Google ของคุณโดยตรง
+                    </div>
+
+                    <form id="member-password-form" onsubmit="handleMemberPasswordSubmit(event)" class="space-y-4">
+                        <div>
+                            <label for="member-current-password" class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่านปัจจุบัน</label>
+                            <div class="relative">
+                                <input type="password" id="member-current-password" required autocomplete="current-password" class="soulin-input w-full text-sm pl-3.5 pr-11 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('member-current-password', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="member-new-password" class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่านใหม่</label>
+                            <div class="relative">
+                                <input type="password" id="member-new-password" required minlength="6" autocomplete="new-password" class="soulin-input w-full text-sm pl-3.5 pr-11 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('member-new-password', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 space-y-1">
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div id="member-pw-strength-bar" class="h-1.5 rounded-full transition-all duration-300 bg-slate-200 w-0"></div>
+                                </div>
+                                <span id="member-pw-strength-label" class="block text-[11px] text-slate-500"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="member-confirm-password" class="block text-xs font-semibold text-slate-700 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
+                            <div class="relative">
+                                <input type="password" id="member-confirm-password" required minlength="6" autocomplete="new-password" class="soulin-input w-full text-sm pl-3.5 pr-11 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-soulin-primary/35 focus:border-soulin-primary">
+                                <button type="button" onclick="togglePasswordVisibility('member-confirm-password', this)" aria-label="แสดงรหัสผ่าน" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-soulin-primary p-1.5">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="member-password-feedback" role="alert" class="hidden"></div>
+
+                        <button type="submit" class="bg-soulin-primary hover:bg-soulin-dark text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl shadow-md transition-all inline-flex items-center gap-2">
+                            <i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-soulin-dark text-white border-t border-emerald-900/30 mt-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-soulin-light">
+            <span><strong>SOULIN</strong> — สูดความสดชื่น ลึกไปถึงดวงวิญญาณ</span>
+            <span>© 2026 SOULIN Brand Co., Ltd. All rights reserved.</span>
+        </div>
+    </footer>
+
+</body>
+</html>

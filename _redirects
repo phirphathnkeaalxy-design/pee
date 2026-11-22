@@ -1,0 +1,6 @@
+/supabase/* /soulin.html 404
+/admin /admin-login.html 302
+/login /login.html 301
+/member /member.html 301
+/privacy /privacy.html 301
+/terms /privacy.html#terms 301
