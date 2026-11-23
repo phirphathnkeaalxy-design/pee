@@ -422,6 +422,9 @@ function handleSignUp(submitEvent) {
 }
 
 function logout() {
+    if (typeof window.signOutSupabaseAuth === 'function') {
+        window.signOutSupabaseAuth();
+    }
     window.currentUser = null;
     localStorage.removeItem('soulin_user');
     renderAuthUI();

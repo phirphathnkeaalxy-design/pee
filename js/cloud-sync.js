@@ -202,7 +202,7 @@ function mapCmsToSupabaseRow(cmsSettings) {
         tag: textOr(cmsSettings.tag, fallbackCms.tag),
         subtitle: textOr(cmsSettings.subtitle, fallbackCms.subtitle),
         img: textOr(cmsSettings.img, fallbackCms.img),
-        gsheet_webhook: textOr(cmsSettings.gsheetWebhook),
+        gsheet_webhook: '',
         payment_config: mergePaymentConfigRecord(cmsSettings.paymentConfig),
         updated_at: new Date().toISOString()
     };
@@ -210,12 +210,15 @@ function mapCmsToSupabaseRow(cmsSettings) {
 
 function mapSupabaseRowToCms(rowRecord) {
     const fallbackCms = typeof DEFAULT_CMS_CONFIG !== 'undefined' ? DEFAULT_CMS_CONFIG : {};
+    const existingWebhook = typeof window !== 'undefined' && window.cmsConfig
+        ? textOr(window.cmsConfig.gsheetWebhook)
+        : '';
     return {
         title: textOr(rowRecord.title, fallbackCms.title),
         tag: textOr(rowRecord.tag, fallbackCms.tag),
         subtitle: textOr(rowRecord.subtitle, fallbackCms.subtitle),
         img: textOr(rowRecord.img, fallbackCms.img),
-        gsheetWebhook: textOr(rowRecord.gsheet_webhook),
+        gsheetWebhook: existingWebhook,
         paymentConfig: mergePaymentConfigRecord(rowRecord.payment_config)
     };
 }
@@ -354,6 +357,108 @@ async function signInAdminWithSupabase(adminEmail, adminPassword) {
     };
 }
 
+function buildSupabaseCustomerUser(authUser, fallbackName, fallbackPhone) {
+    const meta = authUser && authUser.user_metadata ? authUser.user_metadata : {};
+    const userEmail = textOr(authUser && authUser.email).toLowerCase();
+    const displayName = textOr(meta.fullname || meta.full_name || fallbackName, userEmail);
+    return {
+        id: authUser.id,
+        username: userEmail,
+        email: userEmail,
+        role: 'user',
+        name: displayName,
+        phone: textOr(meta.phone || fallbackPhone),
+        defaultAddress: '',
+        authProvider: 'supabase'
+    };
+}
+
+function validateCustomerSignupInput(profileInput) {
+    const raw = profileInput || {};
+    const cleanName = textOr(raw.fullname);
+    const cleanEmail = textOr(raw.email || raw.username).toLowerCase();
+    const cleanPass = textOr(raw.password);
+    const cleanPhone = String(raw.phone || '').replace(/[\s-]/g, '');
+    if (!cleanName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return { valid: false, message: 'กรุณากรอกชื่อ-นามสกุล และอีเมลที่ถูกต้อง' };
+    }
+    if (cleanPass.length < 6) {
+        return { valid: false, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' };
+    }
+    if (cleanPhone && !/^[0-9]{9,10}$/.test(cleanPhone)) {
+        return { valid: false, message: 'กรุณากรอกเบอร์โทรศัพท์ 9-10 หลักให้ถูกต้อง' };
+    }
+    return { valid: true, cleanName, cleanEmail, cleanPass, cleanPhone };
+}
+
+function formatSignupAuthResult(signUpBox, signUpErr, cleanName, cleanPhone) {
+    if (signUpErr || !signUpBox || !signUpBox.user) {
+        if (signUpErr) console.error('Supabase customer sign-up error:', signUpErr);
+        return { ok: false, message: 'ไม่สามารถสมัครสมาชิกได้ อีเมลนี้อาจถูกใช้งานแล้ว' };
+    }
+    if (!signUpBox.session) {
+        return {
+            ok: true,
+            needsEmailConfirmation: true,
+            user: null,
+            message: 'ส่งลิงก์ยืนยันไปยังอีเมลของคุณแล้ว กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ'
+        };
+    }
+    return {
+        ok: true,
+        needsEmailConfirmation: false,
+        user: buildSupabaseCustomerUser(signUpBox.user, cleanName, cleanPhone)
+    };
+}
+
+async function signUpCustomerWithSupabase(profileInput) {
+    const parsed = validateCustomerSignupInput(profileInput);
+    if (!parsed.valid) return { ok: false, message: parsed.message };
+    const activeClient = resolveSupabaseClient();
+    if (!activeClient || !activeClient.auth || typeof activeClient.auth.signUp !== 'function') {
+        return { ok: false, message: 'ระบบยืนยันตัวตน Supabase ยังไม่พร้อมใช้งาน' };
+    }
+    const { data: signUpBox, error: signUpErr } = await activeClient.auth.signUp({
+        email: parsed.cleanEmail,
+        password: parsed.cleanPass,
+        options: { data: { fullname: parsed.cleanName, phone: parsed.cleanPhone } }
+    });
+    return formatSignupAuthResult(signUpBox, signUpErr, parsed.cleanName, parsed.cleanPhone);
+}
+
+async function formatCustomerLoginOutcome(activeClient, signInBox, signInErr, cleanEmail) {
+    if (signInErr || !signInBox || !signInBox.user) {
+        if (signInErr) console.error('Supabase customer sign-in error:', signInErr);
+        return { ok: false, message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    const isAdmin = await checkSupabaseAdminSession(activeClient);
+    if (isAdmin) {
+        const adminEmail = signInBox.user.email || cleanEmail;
+        return {
+            ok: true,
+            user: { id: signInBox.user.id, username: adminEmail, email: adminEmail, role: 'admin', name: 'ผู้ดูแลระบบ (Admin)', authProvider: 'supabase' }
+        };
+    }
+    return { ok: true, user: buildSupabaseCustomerUser(signInBox.user, '', '') };
+}
+
+async function signInCustomerWithSupabase(emailInput, passwordInput) {
+    const cleanEmail = textOr(emailInput).toLowerCase();
+    const cleanPass = textOr(passwordInput);
+    if (!cleanEmail || !cleanPass) {
+        return { ok: false, message: 'กรุณากรอกอีเมลและรหัสผ่าน' };
+    }
+    const activeClient = resolveSupabaseClient();
+    if (!isSupabaseAuthReady(activeClient)) {
+        return { ok: false, message: 'ระบบยืนยันตัวตน Supabase ยังไม่พร้อมใช้งาน' };
+    }
+    const { data: signInBox, error: signInErr } = await activeClient.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPass
+    });
+    return formatCustomerLoginOutcome(activeClient, signInBox, signInErr, cleanEmail);
+}
+
 function enforceValidAdminUiSession(isAdminSession) {
     if (isAdminSession || !window.currentUser || window.currentUser.role !== 'admin') {
         return;
@@ -387,7 +492,8 @@ function mapOrderToRpcParams(orderRecord) {
 }
 
 async function hydrateSupabaseOrders(sbClient) {
-    if (!(await checkSupabaseAdminSession(sbClient))) return false;
+    const sessionUser = await fetchCurrentSupabaseSessionUser(sbClient);
+    if (!sessionUser) return false;
     const { data: fetchedRows, error: queryErr } = await sbClient
         .from('soulin_orders')
         .select('*')
@@ -406,7 +512,7 @@ async function hydrateSupabaseOrders(sbClient) {
 async function hydrateSupabaseCms(sbClient) {
     const { data: fetchedRows, error: queryErr } = await sbClient
         .from('soulin_cms')
-        .select('*')
+        .select('id, title, tag, subtitle, img, payment_config')
         .eq('id', 'main');
     if (queryErr) {
         console.error('Supabase CMS fetch failed:', queryErr);
@@ -415,10 +521,25 @@ async function hydrateSupabaseCms(sbClient) {
     if (!Array.isArray(fetchedRows) || fetchedRows.length === 0) return false;
     window.cmsConfig = mapSupabaseRowToCms(fetchedRows[0]);
     persistCloudCache('soulin_cms', JSON.stringify(window.cmsConfig));
-    if (window.cmsConfig.gsheetWebhook) {
-        persistCloudCache('soulin_gsheet_webhook', window.cmsConfig.gsheetWebhook);
-    }
     refreshSyncedCmsUi();
+    return true;
+}
+
+async function hydrateSupabaseAdminSettings(sbClient) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return false;
+    const { data: fetchedRows, error: queryErr } = await sbClient
+        .from('soulin_admin_settings')
+        .select('id, gsheet_webhook')
+        .eq('id', 'main');
+    if (queryErr) {
+        console.error('Supabase admin settings fetch failed:', queryErr);
+        return false;
+    }
+    if (!Array.isArray(fetchedRows) || fetchedRows.length === 0) return false;
+    const webhookUrl = textOr(fetchedRows[0].gsheet_webhook);
+    if (window.cmsConfig) window.cmsConfig.gsheetWebhook = webhookUrl;
+    persistCloudCache('soulin_gsheet_webhook', webhookUrl);
+    persistCloudCache('soulin_cms', JSON.stringify(window.cmsConfig || {}));
     return true;
 }
 
@@ -439,6 +560,21 @@ async function hydrateSupabaseAuditLogs(sbClient) {
     return true;
 }
 
+function notifyCloudOrderError(rpcErr) {
+    console.error('Supabase order RPC failed:', rpcErr);
+    if (typeof showToast !== 'function') return;
+    const errMsg = String(rpcErr && rpcErr.message || '');
+    if (errMsg.includes('Authentication required')) {
+        showToast('กรุณาเข้าสู่ระบบด้วยอีเมลลูกค้าก่อนสั่งซื้อสินค้า', 'error');
+        return;
+    }
+    if (errMsg.includes('wait a moment') || errMsg.includes('Too many orders')) {
+        showToast('ทำรายการถี่เกินไป กรุณารอสักครู่ก่อนสั่งซื้ออีกครั้ง', 'error');
+        return;
+    }
+    showToast('ไม่สามารถบันทึกคำสั่งซื้อขึ้นคลาวด์ได้ กรุณาลองใหม่', 'error');
+}
+
 async function syncOrderViaSupabase(sbClient, orderRecord) {
     if (await checkSupabaseAdminSession(sbClient)) {
         const { error: syncErr } = await sbClient
@@ -450,7 +586,7 @@ async function syncOrderViaSupabase(sbClient, orderRecord) {
     if (typeof sbClient.rpc !== 'function') return;
     const { error: rpcErr } = await sbClient.rpc('place_soulin_order', mapOrderToRpcParams(orderRecord));
     if (rpcErr) {
-        console.error('Supabase order RPC failed:', rpcErr);
+        notifyCloudOrderError(rpcErr);
         return;
     }
     await hydrateSupabaseProducts(sbClient);
@@ -473,6 +609,19 @@ async function syncCmsViaSupabase(sbClient, cmsSettings) {
     if (syncErr) console.error('Supabase CMS upsert failed:', syncErr);
 }
 
+async function syncAdminWebhookViaSupabase(sbClient, webhookUrl) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return false;
+    const { error: syncErr } = await sbClient
+        .from('soulin_admin_settings')
+        .upsert({
+            id: 'main',
+            gsheet_webhook: textOr(webhookUrl),
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+    if (syncErr) console.error('Supabase webhook upsert failed:', syncErr);
+    return !syncErr;
+}
+
 async function syncAuditLogViaSupabase(sbClient, logEntry) {
     const { error: syncErr } = await sbClient
         .from('soulin_audit_logs')
@@ -493,11 +642,14 @@ async function deleteProductViaSupabase(sbClient, prodId) {
 function registerSupabaseSaveHelpers(sbClient) {
     window.hasValidSupabaseAdminSession = () => checkSupabaseAdminSession(sbClient);
     window.signInAdminWithSupabase = signInAdminWithSupabase;
+    window.signUpCustomerWithSupabase = signUpCustomerWithSupabase;
+    window.signInCustomerWithSupabase = signInCustomerWithSupabase;
     window.signOutSupabaseAuth = () => performSupabaseSignOut(sbClient);
     window.syncOrderToCloud = (orderRecord) => syncOrderViaSupabase(sbClient, orderRecord);
     window.syncProductsToCloud = (productsList) => syncProductsViaSupabase(sbClient, productsList);
     window.deleteProductFromCloud = (prodId) => deleteProductViaSupabase(sbClient, prodId);
     window.syncCMSToCloud = (cmsSettings) => syncCmsViaSupabase(sbClient, cmsSettings);
+    window.syncAdminWebhookToCloud = (webhookUrl) => syncAdminWebhookViaSupabase(sbClient, webhookUrl);
     window.syncAuditLogToCloud = (logEntry) => syncAuditLogViaSupabase(sbClient, logEntry);
     window.refreshSupabaseAuditLogs = () => hydrateSupabaseAuditLogs(sbClient);
 }
@@ -522,11 +674,13 @@ async function initSupabaseCloud(sbSettings) {
         const sbClient = window.supabase.createClient(sbSettings.url, sbSettings.publishableKey);
         window.soulinSupabaseClient = sbClient;
         registerSupabaseSaveHelpers(sbClient);
-        const isAdminSession = await checkSupabaseAdminSession(sbClient);
+        const sessionUser = await fetchCurrentSupabaseSessionUser(sbClient);
+        const isAdminSession = sessionUser ? await checkSupabaseAdminSession(sbClient) : false;
         enforceValidAdminUiSession(isAdminSession);
         const hydrateTasks = [hydrateSupabaseProducts(sbClient), hydrateSupabaseCms(sbClient)];
+        if (sessionUser) hydrateTasks.push(hydrateSupabaseOrders(sbClient));
         if (isAdminSession) {
-            hydrateTasks.push(hydrateSupabaseOrders(sbClient), hydrateSupabaseAuditLogs(sbClient));
+            hydrateTasks.push(hydrateSupabaseAdminSettings(sbClient), hydrateSupabaseAuditLogs(sbClient));
         }
         await Promise.all(hydrateTasks);
         if (sbSettings.enableRealtime) {
@@ -536,6 +690,7 @@ async function initSupabaseCloud(sbSettings) {
         return true;
     } catch (supabaseErr) {
         console.error('Supabase initialization error:', supabaseErr);
+        window.soulinCloudReadyPromise = null;
         setCloudSyncBadge('<i class="fa-solid fa-circle text-rose-400 text-[8px]"></i> Supabase Error (Local Fallback)');
         return false;
     }
@@ -833,6 +988,8 @@ window.deleteImagesFromCloud = deleteImagesFromSupabaseStorage;
 window.cleanupOrphanedStorageImages = cleanupOrphanedStorageImages;
 window.hasValidSupabaseAdminSession = (explicitClient) => checkSupabaseAdminSession(explicitClient);
 window.signInAdminWithSupabase = signInAdminWithSupabase;
+window.signUpCustomerWithSupabase = signUpCustomerWithSupabase;
+window.signInCustomerWithSupabase = signInCustomerWithSupabase;
 window.signOutSupabaseAuth = (explicitClient) => performSupabaseSignOut(explicitClient);
 
 let activeCloudInitPromise = null;

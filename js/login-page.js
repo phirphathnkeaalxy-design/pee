@@ -113,6 +113,35 @@ function renderLoginPageState() {
     prefillRememberedUsername();
 }
 
+function completeLoginPageSignIn(userSession, passwordEl, shouldRemember) {
+    window.currentUser = userSession;
+    if (!safeStorageSet('soulin_user', JSON.stringify(window.currentUser))) return false;
+
+    if (shouldRemember) {
+        safeStorageSet('soulin_remembered_username', userSession.username);
+    } else {
+        localStorage.removeItem('soulin_remembered_username');
+    }
+
+    if (passwordEl) passwordEl.value = '';
+    const greeting = userSession.role === 'admin'
+        ? 'เข้าสู่ระบบแอดมินสำเร็จ!'
+        : `ยินดีต้อนรับคุณ ${userSession.name}`;
+    showToast(greeting, 'success');
+    window.location.href = buildStoreDestination(userSession.role);
+    return true;
+}
+
+async function handleCloudCustomerLogin(emailText, passwordEl, rememberEl) {
+    const authOutcome = await window.signInCustomerWithSupabase(emailText, passwordEl.value);
+    if (!authOutcome.ok) {
+        setInlineAuthError('login-inline-error', authOutcome.message);
+        showToast(authOutcome.message, 'error');
+        return false;
+    }
+    return completeLoginPageSignIn(authOutcome.user, passwordEl, Boolean(rememberEl && rememberEl.checked));
+}
+
 function handleLoginPageSubmit(submitEvent) {
     if (submitEvent) submitEvent.preventDefault();
     setInlineAuthError('login-inline-error', '');
@@ -120,29 +149,17 @@ function handleLoginPageSubmit(submitEvent) {
     const usernameEl = document.getElementById('page-login-username');
     const passwordEl = document.getElementById('page-login-password');
     const rememberEl = document.getElementById('page-remember-username');
-    const authOutcome = verifyUserCredentials(usernameEl.value, passwordEl.value);
+    if (window.soulinSupabaseClient && typeof window.signInCustomerWithSupabase === 'function') {
+        return handleCloudCustomerLogin(usernameEl.value, passwordEl, rememberEl);
+    }
 
+    const authOutcome = verifyUserCredentials(usernameEl.value, passwordEl.value);
     if (!authOutcome.ok) {
         setInlineAuthError('login-inline-error', authOutcome.message);
         showToast(authOutcome.message, 'error');
-        return;
+        return false;
     }
-
-    window.currentUser = authOutcome.user;
-    if (!safeStorageSet('soulin_user', JSON.stringify(window.currentUser))) return;
-
-    if (rememberEl && rememberEl.checked) {
-        safeStorageSet('soulin_remembered_username', authOutcome.user.username);
-    } else {
-        localStorage.removeItem('soulin_remembered_username');
-    }
-
-    passwordEl.value = '';
-    const greeting = authOutcome.user.role === 'admin'
-        ? 'เข้าสู่ระบบแอดมินสำเร็จ!'
-        : `ยินดีต้อนรับคุณ ${authOutcome.user.name}`;
-    showToast(greeting, 'success');
-    window.location.href = buildStoreDestination(authOutcome.user.role);
+    return completeLoginPageSignIn(authOutcome.user, passwordEl, Boolean(rememberEl && rememberEl.checked));
 }
 
 function recordSignupPdpaConsent() {
@@ -157,6 +174,43 @@ function recordSignupPdpaConsent() {
     }));
 }
 
+async function handleCloudCustomerSignup(signupInput) {
+    const regOutcome = await window.signUpCustomerWithSupabase({
+        fullname: signupInput.fullname,
+        email: signupInput.username,
+        password: signupInput.password,
+        phone: signupInput.phone
+    });
+    if (!regOutcome.ok) {
+        setInlineAuthError('signup-inline-error', regOutcome.message);
+        showToast(regOutcome.message, 'error');
+        return false;
+    }
+    recordSignupPdpaConsent();
+    if (regOutcome.needsEmailConfirmation) {
+        showToast(regOutcome.message, 'info');
+        switchLoginPageMode('login');
+        return true;
+    }
+    window.currentUser = regOutcome.user;
+    if (!safeStorageSet('soulin_user', JSON.stringify(window.currentUser))) return false;
+    safeStorageSet('soulin_remembered_username', regOutcome.user.username);
+    showToast('ลงทะเบียนสมาชิก SOULIN สำเร็จ!', 'success');
+    window.location.href = buildStoreDestination('user');
+    return true;
+}
+
+function validateLoginSignupPrechecks(password, confirmPassword) {
+    if (password !== confirmPassword) {
+        return 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน';
+    }
+    const pdpaBox = document.getElementById('page-signup-pdpa');
+    if (pdpaBox && !pdpaBox.checked) {
+        return 'กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว (PDPA) ก่อนสมัครสมาชิก';
+    }
+    return '';
+}
+
 function handleSignupPageSubmit(submitEvent) {
     if (submitEvent) submitEvent.preventDefault();
     setInlineAuthError('signup-inline-error', '');
@@ -167,37 +221,37 @@ function handleSignupPageSubmit(submitEvent) {
     const password = document.getElementById('page-signup-password').value;
     const confirmPassword = document.getElementById('page-signup-confirm').value;
 
-    if (password !== confirmPassword) {
-        const mismatchMsg = 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน';
-        setInlineAuthError('signup-inline-error', mismatchMsg);
-        showToast(mismatchMsg, 'error');
-        return;
+    const precheckError = validateLoginSignupPrechecks(password, confirmPassword);
+    if (precheckError) {
+        setInlineAuthError('signup-inline-error', precheckError);
+        showToast(precheckError, 'error');
+        return false;
     }
 
-    const pdpaBox = document.getElementById('page-signup-pdpa');
-    if (pdpaBox && !pdpaBox.checked) {
-        const consentMsg = 'กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว (PDPA) ก่อนสมัครสมาชิก';
-        setInlineAuthError('signup-inline-error', consentMsg);
-        showToast(consentMsg, 'error');
-        return;
+    if (window.soulinSupabaseClient && typeof window.signUpCustomerWithSupabase === 'function') {
+        return handleCloudCustomerSignup({ fullname, username, password, phone });
     }
 
     const regOutcome = registerCustomerAccount({ fullname, username, password, phone });
     if (!regOutcome.ok) {
         setInlineAuthError('signup-inline-error', regOutcome.message);
         showToast(regOutcome.message, 'error');
-        return;
+        return false;
     }
 
     window.currentUser = regOutcome.user;
-    if (!safeStorageSet('soulin_user', JSON.stringify(window.currentUser))) return;
+    if (!safeStorageSet('soulin_user', JSON.stringify(window.currentUser))) return false;
     recordSignupPdpaConsent();
     safeStorageSet('soulin_remembered_username', regOutcome.user.username);
     showToast('ลงทะเบียนสมาชิก SOULIN สำเร็จ!', 'success');
     window.location.href = buildStoreDestination('user');
+    return true;
 }
 
-function handleLoginPageLogout() {
+async function handleLoginPageLogout() {
+    if (typeof window.signOutSupabaseAuth === 'function') {
+        await window.signOutSupabaseAuth();
+    }
     window.currentUser = null;
     localStorage.removeItem('soulin_user');
     renderLoginPageState();
@@ -230,6 +284,9 @@ function bootstrapLoginPage() {
     }
     if (typeof initRealGoogleButton === 'function') {
         initRealGoogleButton('google-gsi-btn-wrap');
+    }
+    if (typeof initCloudSync === 'function') {
+        initCloudSync();
     }
     renderLoginPageState();
 }

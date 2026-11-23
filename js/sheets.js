@@ -14,6 +14,10 @@ function closeGoogleSheetModal() {
 }
 
 function saveGoogleSheetWebhook() {
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return;
+    }
     const webhookUrl = document.getElementById('gsheet-webhook-url').value.trim();
     if (webhookUrl && !webhookUrl.startsWith('https://')) {
         showToast('กรุณากรอก URL ที่ขึ้นต้นด้วย https:// เท่านั้น', 'error');
@@ -23,8 +27,8 @@ function saveGoogleSheetWebhook() {
     safeStorageSet('soulin_gsheet_webhook', webhookUrl);
     window.cmsConfig.gsheetWebhook = webhookUrl;
     safeStorageSet('soulin_cms', JSON.stringify(window.cmsConfig));
-    if (typeof window.syncCMSToCloud === 'function') {
-        window.syncCMSToCloud(window.cmsConfig);
+    if (typeof window.syncAdminWebhookToCloud === 'function') {
+        window.syncAdminWebhookToCloud(webhookUrl);
     }
     if (typeof recordAuditLog === 'function') {
         recordAuditLog({
