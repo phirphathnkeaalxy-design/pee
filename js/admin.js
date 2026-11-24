@@ -864,7 +864,8 @@ function renderAdminOrderRow(orderRecord) {
             <div class="text-left md:text-right flex-shrink-0 space-y-2 w-full md:w-auto">
                 <span class="text-lg font-bold text-soulin-primary block">${orderTotalText} ฿</span>
                 <div class="flex flex-wrap md:justify-end items-center gap-1.5">
-                    <button type="button" onclick="printAdminOrder('${safeOrderId}')" title="พิมพ์ใบปะหน้า / ใบสั่งซื้อ" class="text-xs bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 border border-slate-200 font-semibold px-3 py-2 rounded-xl transition-all inline-flex items-center gap-1.5"><i class="fa-solid fa-print"></i> พิมพ์ใบปะหน้า</button>
+                    <button type="button" onclick="printAdminOrder('${safeOrderId}', 'invoice')" title="พิมพ์ใบสั่งซื้อ / ใบเสร็จ A4" class="text-xs bg-white hover:bg-soulin-dark hover:text-white text-soulin-dark border border-emerald-200 font-semibold px-2.5 py-2 rounded-xl transition-all inline-flex items-center gap-1"><i class="fa-solid fa-file-invoice"></i> ใบเสร็จ A4</button>
+                    <button type="button" onclick="printAdminOrder('${safeOrderId}', 'label')" title="พิมพ์ใบปะหน้าพัสดุ 100×150 มม." class="text-xs bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 border border-slate-200 font-semibold px-2.5 py-2 rounded-xl transition-all inline-flex items-center gap-1"><i class="fa-solid fa-tag"></i> ใบปะหน้า</button>
                     <select onchange="updateOrderStatus('${safeOrderId}', this.value)" aria-label="เปลี่ยนสถานะคำสั่งซื้อ ${safeOrderId}" class="text-xs border border-emerald-200 rounded-xl px-3 py-2 bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-soulin-primary flex-1 md:flex-initial">
                         ${optionsHtml}
                     </select>
@@ -889,136 +890,6 @@ function renderAdminOrdersList() {
         return;
     }
     container.innerHTML = filteredOrders.map(renderAdminOrderRow).join('');
-}
-
-function buildPrintDocumentShell(docTitle, bodyMarkup) {
-    const safeTitle = escapeHtml(docTitle);
-    return `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>${safeTitle}</title><style>
-        *{box-sizing:border-box}body{margin:0;padding:24px;font-family:'Noto Sans Thai','Segoe UI',sans-serif;color:#1E293B;background:#F8FAFC}
-        .sheet{max-width:780px;margin:0 auto;background:#fff;border:1px solid #CBD5E1;border-radius:16px;padding:28px}
-        .no-print{max-width:780px;margin:0 auto 14px;display:flex;justify-content:flex-end;gap:8px}
-        .btn{border:1px solid #CBD5E1;background:#fff;color:#334155;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer}
-        .btn-primary{background:#2D5A42;border-color:#2D5A42;color:#fff}
-        .box{border:1px dashed #64748B;border-radius:12px;padding:14px 16px;margin:14px 0;background:#F8FAFC}
-        .cod-box{border:2px solid #B91C1C;background:#FEF2F2;color:#991B1B;border-radius:10px;padding:10px 14px;margin:12px 0;font-weight:700;font-size:14px}
-        table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-        th,td{border-bottom:1px solid #E2E8F0;padding:9px 8px;text-align:left}
-        th{background:#F1F5F9;color:#0F172A;font-size:12px}.num{text-align:right}
-        @media print{body{background:#fff;padding:0}.no-print{display:none}.sheet{border:none;border-radius:0;padding:12px;max-width:100%}}
-    </style></head><body>
-    <div class="no-print"><button class="btn" onclick="window.close()">ปิดหน้าต่าง</button><button class="btn btn-primary" onclick="window.print()">สั่งพิมพ์เอกสาร</button></div>
-    <main class="sheet">${bodyMarkup}</main></body></html>`;
-}
-
-function buildPrintRecipientMetaHtml(orderRecord) {
-    const details = orderRecord.shippingDetails && typeof orderRecord.shippingDetails === 'object' ? orderRecord.shippingDetails : {};
-    const recipient = escapeHtml(details.recipient || orderRecord.customerName || '-');
-    const phone = details.phone ? ` • โทร. ${escapeHtml(details.phone)}` : '';
-    const noteLine = details.note ? `<div style="margin-top:4px;font-size:12px;color:#475569">หมายเหตุ: ${escapeHtml(details.note)}</div>` : '';
-    const codBanner = orderRecord.paymentMethod === 'cod'
-        ? `<div class="cod-box">เก็บเงินปลายทาง (COD): ${(Number(orderRecord.total) || 0).toLocaleString()} บาท</div>`
-        : '';
-    return `<div class="box"><div style="font-size:11px;color:#64748B;font-weight:700;text-transform:uppercase">ผู้รับ / ที่อยู่จัดส่ง</div><div style="font-size:15px;font-weight:700;margin-top:4px">${recipient}${phone}</div><div style="font-size:13px;margin-top:4px;line-height:1.5">${escapeHtml(orderRecord.address || '-')}</div>${noteLine}</div>${codBanner}`;
-}
-
-function buildPrintOrderItemsRowsHtml(orderRecord) {
-    return (orderRecord.items || []).map(line => {
-        const lineQty = Number(line.qty) || 0;
-        const unitPrice = Number(line.price) || 0;
-        const lineTotal = unitPrice > 0 ? unitPrice * lineQty : (Number(line.lineTotal) || 0);
-        return `<tr><td>${escapeHtml(line.name)}</td><td class="num">${lineQty}</td><td class="num">${unitPrice.toLocaleString()} ฿</td><td class="num">${lineTotal.toLocaleString()} ฿</td></tr>`;
-    }).join('');
-}
-
-function buildPrintOrderTotalsHtml(orderRecord) {
-    const shippingFee = Number(orderRecord.shipping) || 0;
-    const discountAmt = Number(orderRecord.discount) || 0;
-    const codFee = Number(orderRecord.codFee) || 0;
-    const subtotalAmt = Number(orderRecord.subtotal) || Math.max(0, (Number(orderRecord.total) || 0) - shippingFee - codFee + discountAmt);
-    const discountLine = discountAmt > 0 ? `<div>ส่วนลดโปรโมชั่น: -${discountAmt.toLocaleString()} ฿</div>` : '';
-    const codLine = codFee > 0 ? `<div>ค่าธรรมเนียม COD: ${codFee.toLocaleString()} ฿</div>` : '';
-    return `<div style="margin-top:14px;text-align:right;font-size:13px;line-height:1.7"><div>ค่าสินค้า: ${subtotalAmt.toLocaleString()} ฿</div><div>ค่าจัดส่ง: ${shippingFee.toLocaleString()} ฿</div>${discountLine}${codLine}<div style="font-size:16px;font-weight:700;color:#166534;margin-top:4px">ยอดรวมสุทธิ: ${(Number(orderRecord.total) || 0).toLocaleString()} ฿</div></div>`;
-}
-
-function buildOrderShippingLabelHtml(orderRecord) {
-    const safeId = escapeHtml(orderRecord.orderId);
-    const methodLabel = typeof getPaymentMethodLabel === 'function' ? getPaymentMethodLabel(orderRecord.paymentMethod) : (orderRecord.paymentMethod || 'promptpay');
-    const recipientHtml = buildPrintRecipientMetaHtml(orderRecord);
-    const itemsRows = buildPrintOrderItemsRowsHtml(orderRecord);
-    const totalsHtml = buildPrintOrderTotalsHtml(orderRecord);
-    return `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2D5A42;padding-bottom:12px">
-            <div><div style="font-size:20px;font-weight:700;color:#162E22;letter-spacing:1px">SOULIN • ใบสั่งซื้อ &amp; ใบปะหน้าพัสดุ</div><div style="font-size:12px;color:#475569">ผู้ส่ง: ร้าน SOULIN (ยาดมสมุนไพรออร์แกนิก)</div></div>
-            <div style="text-align:right"><div style="font-size:15px;font-weight:700">${safeId}</div><div style="font-size:12px;color:#64748B">${escapeHtml(orderRecord.date || '-')}</div></div>
-        </div>
-        ${recipientHtml}
-        <table><thead><tr><th>รายการสินค้า</th><th class="num">จำนวน</th><th class="num">ราคา/ชิ้น</th><th class="num">รวม</th></tr></thead><tbody>${itemsRows}</tbody></table>
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
-            <div style="font-size:12px;color:#475569;line-height:1.7"><div>การชำระเงิน: <strong>${escapeHtml(methodLabel)}</strong></div><div>สถานะออเดอร์: <strong>${escapeHtml(orderRecord.status || '-')}</strong></div></div>
-            ${totalsHtml}
-        </div>
-    `;
-}
-
-function buildOrdersSummaryTableHtml(orderList) {
-    const totalRevenue = orderList.filter(entry => entry.status !== 'ยกเลิกคำสั่งซื้อ').reduce((sum, entry) => sum + (Number(entry.total) || 0), 0);
-    const rowsHtml = orderList.map(entry => {
-        const itemsSummary = (entry.items || []).map(line => `${escapeHtml(line.name)} × ${Number(line.qty) || 0}`).join(', ');
-        return `<tr><td><strong>${escapeHtml(entry.orderId)}</strong><br><span style="font-size:11px;color:#64748B">${escapeHtml(entry.date || '-')}</span></td><td>${escapeHtml(entry.customerName)}<br><span style="font-size:11px;color:#64748B">${escapeHtml(entry.address || '-')}</span></td><td>${itemsSummary}</td><td>${escapeHtml(entry.status || '-')}</td><td class="num"><strong>${(Number(entry.total) || 0).toLocaleString()} ฿</strong></td></tr>`;
-    }).join('');
-    return `
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #2D5A42;padding-bottom:12px;margin-bottom:12px">
-            <div><div style="font-size:18px;font-weight:700;color:#162E22">รายงานสรุปคำสั่งซื้อร้าน SOULIN</div><div style="font-size:12px;color:#64748B">พิมพ์เมื่อ: ${escapeHtml(new Date().toLocaleString('th-TH'))}</div></div>
-            <div style="text-align:right;font-size:13px"><div>จำนวน: <strong>${orderList.length} รายการ</strong></div><div>ยอดรวม (ไม่รวมยกเลิก): <strong>${totalRevenue.toLocaleString()} ฿</strong></div></div>
-        </div>
-        <table><thead><tr><th>เลขออเดอร์ / วันที่</th><th>ลูกค้า / ที่อยู่</th><th>รายการสินค้า</th><th>สถานะ</th><th class="num">ยอดสุทธิ</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-    `;
-}
-
-function openPrintableWindow(docTitle, bodyMarkup) {
-    if (typeof window.open !== 'function') return false;
-    const printWin = window.open('', '_blank', 'width=860,height=920');
-    if (!printWin || !printWin.document) {
-        showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up แล้วลองใหม่', 'error');
-        return false;
-    }
-    printWin.document.open();
-    printWin.document.write(buildPrintDocumentShell(docTitle, bodyMarkup));
-    printWin.document.close();
-    if (typeof printWin.focus === 'function') printWin.focus();
-    if (typeof printWin.print === 'function') printWin.print();
-    return true;
-}
-
-function printAdminOrder(orderId) {
-    if (!window.currentUser || window.currentUser.role !== 'admin') {
-        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
-        return false;
-    }
-    const targetOrder = (window.orders || []).find(entry => entry.orderId === orderId);
-    if (!targetOrder) return false;
-    const opened = openPrintableWindow(`SOULIN Order ${targetOrder.orderId}`, buildOrderShippingLabelHtml(targetOrder));
-    if (opened) {
-        emitAdminAudit('order', 'ORDER_PRINTED', targetOrder.orderId, `พิมพ์ใบสั่งซื้อ/ใบปะหน้า ${targetOrder.orderId}`, 'info');
-    }
-    return opened;
-}
-
-function printFilteredAdminOrders() {
-    if (!window.currentUser || window.currentUser.role !== 'admin') {
-        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
-        return false;
-    }
-    const filteredOrders = getFilteredAdminOrdersList();
-    if (filteredOrders.length === 0) {
-        showToast('ไม่มีรายการคำสั่งซื้อที่ตรงกับตัวกรองสำหรับพิมพ์', 'info');
-        return false;
-    }
-    const opened = openPrintableWindow('SOULIN Orders Summary', buildOrdersSummaryTableHtml(filteredOrders));
-    if (opened) {
-        emitAdminAudit('order', 'ORDERS_SUMMARY_PRINTED', 'FILTERED_ORDERS', `พิมพ์รายงานคำสั่งซื้อ ${filteredOrders.length} รายการ`, 'info', { count: filteredOrders.length });
-    }
-    return opened;
 }
 
 function initAnalyticsChart() {
