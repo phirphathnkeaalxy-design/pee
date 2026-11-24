@@ -280,16 +280,32 @@ function buildInvoicePartiesHtml(orderRecord, safeId) {
     `;
 }
 
+function resolveShopPrintLogoUrl() {
+    const cmsImg = window.cmsConfig ? window.cmsConfig.img : '';
+    const defaultImg = typeof DEFAULT_CMS_CONFIG !== 'undefined' ? DEFAULT_CMS_CONFIG.img : '';
+    return sanitizeImageUrl(cmsImg) || sanitizeImageUrl(defaultImg);
+}
+
+function buildPrintLogoImgHtml(logoCls) {
+    const logoUrl = resolveShopPrintLogoUrl();
+    if (!logoUrl) return '';
+    return `<img class="${logoCls}" src="${escapeHtml(logoUrl)}" alt="SOULIN">`;
+}
+
 function buildA4InvoicePageHtml(orderRecord, senderProfile) {
     const safeId = escapeHtml(orderRecord.orderId);
     const bahtText = formatThaiBahtText(Number(orderRecord.total) || 0);
     const senderPhone = senderProfile.phone ? ` • โทร. ${escapeHtml(senderProfile.phone)}` : '';
+    const logoHtml = buildPrintLogoImgHtml('brand-logo');
     return `
         <article class="doc-page a4-doc">
             <header class="inv-head">
-                <div>
-                    <div class="brand-title">${escapeHtml(senderProfile.shopName)}</div>
-                    <div class="muted">${escapeHtml(senderProfile.address)}${senderPhone}</div>
+                <div class="brand-row">
+                    ${logoHtml}
+                    <div>
+                        <div class="brand-title">${escapeHtml(senderProfile.shopName)}</div>
+                        <div class="muted">${escapeHtml(senderProfile.address)}${senderPhone}</div>
+                    </div>
                 </div>
                 <div class="inv-right">
                     <div class="doc-badge">ใบสั่งซื้อ &amp; ใบจัดสินค้า</div>
@@ -333,10 +349,11 @@ function buildThermalLabelPageHtml(orderRecord, senderProfile) {
     const totalQty = (orderRecord.items || []).reduce((sum, line) => sum + (Number(line.qty) || 0), 0);
     const senderPhone = senderProfile.phone ? ` (${escapeHtml(senderProfile.phone)})` : '';
     const noteLine = contact.note ? `<div class="lbl-note">หมายเหตุ: ${contact.note}</div>` : '';
+    const logoHtml = buildPrintLogoImgHtml('lbl-logo');
     return `
         <article class="doc-page thermal-doc">
             <div class="lbl-head">
-                <div class="lbl-brand">SOULIN</div>
+                <div class="lbl-brand-row">${logoHtml}<div class="lbl-brand">SOULIN</div></div>
                 <div class="lbl-meta"><strong>${safeId}</strong><span>${escapeHtml(orderRecord.date || '-')}</span></div>
             </div>
             <div class="lbl-barcode">${buildCode39Svg(orderRecord.orderId, 42)}<div class="barcode-txt">${safeId}</div></div>
@@ -364,10 +381,11 @@ function buildOrdersSummaryRowHtml(orderRecord) {
 
 function buildOrdersSummaryTableHtml(orderList, senderProfile) {
     const activeRevenue = orderList.filter(entry => entry.status !== 'ยกเลิกคำสั่งซื้อ').reduce((sum, entry) => sum + (Number(entry.total) || 0), 0);
+    const logoHtml = buildPrintLogoImgHtml('brand-logo brand-logo-sm');
     return `
         <article class="doc-page a4-doc">
             <header class="inv-head">
-                <div><div class="brand-title">${escapeHtml(senderProfile.shopName)} • รายงานสรุปคำสั่งซื้อ</div><div class="muted">พิมพ์เมื่อ: ${escapeHtml(new Date().toLocaleString('th-TH'))}</div></div>
+                <div class="brand-row">${logoHtml}<div><div class="brand-title">${escapeHtml(senderProfile.shopName)} • รายงานสรุปคำสั่งซื้อ</div><div class="muted">พิมพ์เมื่อ: ${escapeHtml(new Date().toLocaleString('th-TH'))}</div></div></div>
                 <div class="inv-right"><div>จำนวนทั้งหมด: <strong>${orderList.length} รายการ</strong></div><div>ยอดขายรวม (ไม่รวมยกเลิก): <strong>${activeRevenue.toLocaleString()} ฿</strong></div></div>
             </header>
             <table class="items-tbl">
@@ -392,6 +410,7 @@ function buildPrintPageCss(pageMode) {
         .doc-page:last-of-type{page-break-after:auto;break-after:auto}
         .a4-doc{border-radius:10px;padding:24px;font-size:13px}
         .inv-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #162E22;padding-bottom:12px;margin-bottom:14px}
+        .brand-row{display:flex;align-items:center;gap:12px}.brand-logo{width:52px;height:52px;object-fit:contain;border-radius:10px;border:1px solid #CBD5E1;background:#F8FAFC;padding:3px;flex-shrink:0}.brand-logo-sm{width:40px;height:40px}
         .brand-title{font-size:20px;font-weight:700;color:#162E22}.inv-right{text-align:right;font-size:12px}
         .doc-badge{display:inline-block;background:#162E22;color:#fff;font-weight:700;padding:4px 10px;border-radius:6px;margin-bottom:6px}
         .barcode-box{width:190px;margin-left:auto}.barcode-txt{font-size:11px;font-weight:700;letter-spacing:1.2px;text-align:center;margin-top:2px}
@@ -408,7 +427,7 @@ function buildPrintPageCss(pageMode) {
         .inv-foot{margin-top:26px}.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:32px;text-align:center;font-size:11px;color:#475569}
         .sign-box .line{border-bottom:1px solid #94A3B8;height:28px;margin-bottom:5px}.foot-note{margin-top:14px;padding-top:10px;border-top:1px solid #E2E8F0;font-size:11px;color:#64748B;text-align:center}
         .thermal-doc{border:2px solid #0F172A;padding:10px;font-size:11px}.lbl-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0F172A;padding-bottom:6px}
-        .lbl-brand{font-size:18px;font-weight:800;letter-spacing:1.5px}.lbl-meta{text-align:right;font-size:10px}.lbl-meta strong{display:block;font-size:11px}
+        .lbl-brand-row{display:flex;align-items:center;gap:6px}.lbl-logo{width:30px;height:30px;object-fit:contain;border-radius:6px;border:1px solid #0F172A;padding:2px;filter:grayscale(100%) contrast(1.25)}.lbl-brand{font-size:18px;font-weight:800;letter-spacing:1.5px}.lbl-meta{text-align:right;font-size:10px}.lbl-meta strong{display:block;font-size:11px}
         .lbl-barcode{padding:6px 4px;border-bottom:1.5px dashed #0F172A}.lbl-from{padding:6px 4px;border-bottom:1.5px solid #0F172A;line-height:1.35}
         .tag{display:inline-block;border:1px solid #0F172A;font-size:9px;font-weight:700;padding:1px 5px;margin-bottom:2px}.sm{font-size:10px}
         .lbl-to{padding:8px 6px;border-bottom:2px solid #0F172A}.to-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
