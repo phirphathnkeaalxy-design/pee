@@ -641,6 +641,62 @@ async function deleteProductViaSupabase(sbClient, prodId) {
     return !delErr;
 }
 
+async function fetchSoulinAdminsViaSupabase(sbClient) {
+    if (!(await checkSupabaseAdminSession(sbClient))) return [];
+    const { data: fetchedRows, error: queryErr } = await sbClient
+        .from('soulin_admins')
+        .select('email, display_name, role, added_by, created_at')
+        .order('created_at', { ascending: true });
+    if (queryErr) {
+        console.error('Supabase admins fetch failed:', queryErr);
+        return [];
+    }
+    window.soulinAdmins = Array.isArray(fetchedRows) ? fetchedRows : [];
+    invokeGlobalUiHooks(['renderAdminTeamManager']);
+    return window.soulinAdmins;
+}
+
+async function addSoulinAdminViaSupabase(sbClient, emailInput, displayNameInput) {
+    const cleanEmail = textOr(emailInput).toLowerCase();
+    const cleanName = textOr(displayNameInput, cleanEmail);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return { ok: false, message: 'กรุณากรอกอีเมลให้ถูกต้อง' };
+    }
+    const sessionUser = await fetchCurrentSupabaseSessionUser(sbClient);
+    if (!sessionUser || !(await checkSupabaseAdminSession(sbClient))) {
+        return { ok: false, message: 'ต้องเข้าสู่ระบบแอดมินผ่าน Supabase Auth ก่อน' };
+    }
+    const { error: insErr } = await sbClient.from('soulin_admins').insert({
+        email: cleanEmail,
+        display_name: cleanName,
+        role: 'admin',
+        added_by: textOr(sessionUser.email, 'admin')
+    });
+    if (insErr) {
+        console.error('Supabase admin add failed:', insErr);
+        return { ok: false, message: 'ไม่สามารถเพิ่มแอดมินได้ (อีเมลนี้อาจมีสิทธิ์อยู่แล้ว)' };
+    }
+    await fetchSoulinAdminsViaSupabase(sbClient);
+    return { ok: true, email: cleanEmail, displayName: cleanName };
+}
+
+async function removeSoulinAdminViaSupabase(sbClient, targetEmail) {
+    const cleanEmail = textOr(targetEmail).toLowerCase();
+    if (!cleanEmail || !(await checkSupabaseAdminSession(sbClient))) {
+        return { ok: false, message: 'ไม่มีสิทธิ์ถอดสิทธิ์ผู้ดูแลระบบ' };
+    }
+    const { error: delErr } = await sbClient
+        .from('soulin_admins')
+        .delete()
+        .eq('email', cleanEmail);
+    if (delErr) {
+        console.error('Supabase admin delete failed:', delErr);
+        return { ok: false, message: 'ไม่สามารถถอดสิทธิ์บัญชีนี้ได้ (อาจเป็นเจ้าของร้านหลัก)' };
+    }
+    await fetchSoulinAdminsViaSupabase(sbClient);
+    return { ok: true, email: cleanEmail };
+}
+
 function registerSupabaseSaveHelpers(sbClient) {
     window.hasValidSupabaseAdminSession = () => checkSupabaseAdminSession(sbClient);
     window.signInAdminWithSupabase = signInAdminWithSupabase;
@@ -654,6 +710,9 @@ function registerSupabaseSaveHelpers(sbClient) {
     window.syncAdminWebhookToCloud = (webhookUrl) => syncAdminWebhookViaSupabase(sbClient, webhookUrl);
     window.syncAuditLogToCloud = (logEntry) => syncAuditLogViaSupabase(sbClient, logEntry);
     window.refreshSupabaseAuditLogs = () => hydrateSupabaseAuditLogs(sbClient);
+    window.fetchAdminUsersFromCloud = () => fetchSoulinAdminsViaSupabase(sbClient);
+    window.addAdminUserToCloud = (email, name) => addSoulinAdminViaSupabase(sbClient, email, name);
+    window.removeAdminUserFromCloud = (email) => removeSoulinAdminViaSupabase(sbClient, email);
 }
 
 function subscribeSupabaseRealtime(sbClient, isAdminSession) {
@@ -682,7 +741,11 @@ async function initSupabaseCloud(sbSettings) {
         const hydrateTasks = [hydrateSupabaseProducts(sbClient), hydrateSupabaseCms(sbClient)];
         if (sessionUser) hydrateTasks.push(hydrateSupabaseOrders(sbClient));
         if (isAdminSession) {
-            hydrateTasks.push(hydrateSupabaseAdminSettings(sbClient), hydrateSupabaseAuditLogs(sbClient));
+            hydrateTasks.push(
+                hydrateSupabaseAdminSettings(sbClient),
+                hydrateSupabaseAuditLogs(sbClient),
+                fetchSoulinAdminsViaSupabase(sbClient)
+            );
         }
         await Promise.all(hydrateTasks);
         if (sbSettings.enableRealtime) {

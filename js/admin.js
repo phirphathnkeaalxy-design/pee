@@ -83,6 +83,9 @@ function renderAdminDashboard() {
     if (typeof renderAdminPaymentSettings === 'function') {
         renderAdminPaymentSettings();
     }
+    if (typeof renderAdminTeamManager === 'function') {
+        renderAdminTeamManager();
+    }
     if (typeof renderAdminAuditLogs === 'function') {
         renderAdminAuditLogs();
     }
@@ -920,4 +923,104 @@ function initAnalyticsChart() {
             }
         }
     });
+}
+
+function buildAdminTeamRowHtml(adminEntry, currentEmail) {
+    const entryEmail = String(adminEntry.email || '').toLowerCase();
+    const safeEmail = escapeHtml(entryEmail);
+    const safeName = escapeHtml(adminEntry.display_name || entryEmail);
+    const isOwner = adminEntry.role === 'owner';
+    const isProtected = isOwner || entryEmail === currentEmail;
+    const roleBadge = isOwner
+        ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">เจ้าของร้าน (Owner)</span>'
+        : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">แอดมิน (Admin)</span>';
+    const removeBtn = isProtected
+        ? '<span class="text-[11px] text-slate-400 font-medium">สิทธิ์หลัก</span>'
+        : `<button type="button" onclick="handleRemoveAdminUser('${safeEmail}')" class="text-[11px] font-semibold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 px-2.5 py-1 rounded-lg transition-all"><i class="fa-solid fa-user-minus mr-1"></i>ถอดสิทธิ์</button>`;
+    return `<div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl border border-slate-200 bg-slate-50/70"><div><div class="flex flex-wrap items-center gap-2"><strong class="text-xs sm:text-sm text-slate-800">${safeName}</strong>${roleBadge}</div><div class="text-[11px] text-slate-500 mt-0.5">${safeEmail}</div></div><div>${removeBtn}</div></div>`;
+}
+
+function renderAdminTeamManager() {
+    const mountEl = document.getElementById('admin-team-mount');
+    if (!mountEl) return;
+    const currentEmail = window.currentUser ? String(window.currentUser.email || window.currentUser.username || '').toLowerCase() : '';
+    const adminsList = Array.isArray(window.soulinAdmins) ? window.soulinAdmins : [];
+    const rowsHtml = adminsList.length > 0
+        ? adminsList.map(entry => buildAdminTeamRowHtml(entry, currentEmail)).join('')
+        : '<div class="text-center py-4 text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">ยังไม่มีรายชื่อแอดมินที่โหลดจาก Supabase</div>';
+    mountEl.innerHTML = `
+        <div class="bg-white p-6 rounded-3xl border border-emerald-100 smooth-shadow space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-soulin-dark">จัดการทีมผู้ดูแลระบบ (${adminsList.length} บัญชี)</h3>
+                    <p class="text-[11px] text-slate-500">เพิ่มอีเมลผู้ดูแลระบบใหม่ได้ทันที ระบบฐานข้อมูลจะตรวจสอบสิทธิ์ผ่าน Supabase Auth ให้โดยอัตโนมัติ</p>
+                </div>
+                <span class="text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full">RLS Protected</span>
+            </div>
+            <form onsubmit="handleAddAdminUser(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-soulin-bg/70 p-4 rounded-2xl border border-emerald-100">
+                <div class="md:col-span-5">
+                    <label for="adm-new-admin-email" class="block text-xs font-semibold text-slate-700 mb-1">อีเมลแอดมินใหม่ *</label>
+                    <input type="email" id="adm-new-admin-email" required placeholder="staff@email.com" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35">
+                </div>
+                <div class="md:col-span-4">
+                    <label for="adm-new-admin-name" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อเรียก / ตำแหน่ง</label>
+                    <input type="text" id="adm-new-admin-name" placeholder="เช่น แอดมินแพ็กของ" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-soulin-primary/35">
+                </div>
+                <div class="md:col-span-3">
+                    <button type="submit" class="w-full bg-soulin-dark hover:bg-soulin-primary text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all inline-flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-user-plus"></i> เพิ่มแอดมิน
+                    </button>
+                </div>
+            </form>
+            <div class="space-y-2.5">${rowsHtml}</div>
+            <p class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                <strong>ขั้นตอนสำหรับแอดมินใหม่:</strong> เมื่อเพิ่มอีเมลที่นี่แล้ว ให้อีเมลนั้นสมัครสมาชิกที่หน้า <a href="./login.html?mode=signup" class="text-soulin-primary font-semibold underline">/login</a> (หรือสร้างใน Supabase Users) แล้วเข้าใช้งานหลังบ้านได้ที่ <a href="./admin-login.html" class="text-soulin-primary font-semibold underline">/admin-login</a>
+            </p>
+        </div>
+    `;
+}
+
+async function handleAddAdminUser(submitEvent) {
+    if (submitEvent) submitEvent.preventDefault();
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return false;
+    }
+    const emailEl = document.getElementById('adm-new-admin-email');
+    const nameEl = document.getElementById('adm-new-admin-name');
+    const emailVal = emailEl && emailEl.value ? emailEl.value.trim().toLowerCase() : '';
+    const nameVal = nameEl && nameEl.value ? nameEl.value.trim() : '';
+    if (typeof window.addAdminUserToCloud !== 'function') {
+        showToast('กรุณาเชื่อมต่อ Supabase ก่อนเพิ่มแอดมิน', 'error');
+        return false;
+    }
+    const addOutcome = await window.addAdminUserToCloud(emailVal, nameVal);
+    if (!addOutcome.ok) {
+        showToast(addOutcome.message, 'error');
+        return false;
+    }
+    if (emailEl) emailEl.value = '';
+    if (nameEl) nameEl.value = '';
+    emitAdminAudit('auth', 'ADMIN_ADDED', addOutcome.email, `เพิ่มสิทธิ์แอดมินให้ "${addOutcome.email}" (${addOutcome.displayName})`, 'warning');
+    showToast(`เพิ่มแอดมิน ${addOutcome.email} เรียบร้อยแล้ว`, 'success');
+    return true;
+}
+
+async function handleRemoveAdminUser(targetEmail) {
+    if (!window.currentUser || window.currentUser.role !== 'admin') {
+        showToast('เข้าถึงเฉพาะแอดมินเท่านั้น', 'error');
+        return false;
+    }
+    if (typeof window.confirm === 'function' && !window.confirm(`ต้องการถอดสิทธิ์แอดมินของ ${targetEmail} ใช่หรือไม่?`)) {
+        return false;
+    }
+    if (typeof window.removeAdminUserFromCloud !== 'function') return false;
+    const remOutcome = await window.removeAdminUserFromCloud(targetEmail);
+    if (!remOutcome.ok) {
+        showToast(remOutcome.message, 'error');
+        return false;
+    }
+    emitAdminAudit('auth', 'ADMIN_REMOVED', remOutcome.email, `ถอดสิทธิ์แอดมินของ "${remOutcome.email}"`, 'warning');
+    showToast(`ถอดสิทธิ์แอดมิน ${remOutcome.email} เรียบร้อยแล้ว`, 'info');
+    return true;
 }
