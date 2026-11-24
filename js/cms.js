@@ -190,6 +190,13 @@ function removeCmsBannerImage() {
     showToast('คืนค่ารูปแบนเนอร์เริ่มต้นแล้ว (กดบันทึกเพื่อยืนยันและลบรูปเก่า)', 'info');
 }
 
+function refreshCmsSubPanels() {
+    syncCmsLivePreview();
+    if (typeof renderPromoCarousel === 'function') renderPromoCarousel();
+    if (typeof renderAdminPromoManager === 'function') renderAdminPromoManager();
+    if (typeof renderAdminPaymentSettings === 'function') renderAdminPaymentSettings();
+}
+
 function renderCMS() {
     const safeImg = sanitizeImageUrl(window.cmsConfig.img) || DEFAULT_CMS_CONFIG.img;
     const setText = (elId, textVal) => {
@@ -215,10 +222,7 @@ function renderCMS() {
     if (previewImg) previewImg.src = safeImg;
     const previewBox = document.getElementById('cms-img-preview-container');
     if (previewBox) previewBox.classList.remove('hidden');
-    syncCmsLivePreview();
-    if (typeof renderAdminPaymentSettings === 'function') {
-        renderAdminPaymentSettings();
-    }
+    refreshCmsSubPanels();
 }
 
 function saveCMSChanges() {

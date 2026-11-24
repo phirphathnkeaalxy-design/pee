@@ -1,4 +1,7 @@
 function renderPromotions() {
+    if (typeof renderPromoCarousel === 'function') {
+        renderPromoCarousel();
+    }
     const container = document.getElementById('promotions-grid');
     if (!container) return;
     container.innerHTML = PROMOTIONS.map(promo => `

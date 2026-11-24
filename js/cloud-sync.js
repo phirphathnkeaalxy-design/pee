@@ -204,6 +204,7 @@ function mapCmsToSupabaseRow(cmsSettings) {
         img: textOr(cmsSettings.img, fallbackCms.img),
         gsheet_webhook: '',
         payment_config: mergePaymentConfigRecord(cmsSettings.paymentConfig),
+        promo_banners: Array.isArray(cmsSettings.promoBanners) ? cmsSettings.promoBanners : [],
         updated_at: new Date().toISOString()
     };
 }
@@ -219,7 +220,8 @@ function mapSupabaseRowToCms(rowRecord) {
         subtitle: textOr(rowRecord.subtitle, fallbackCms.subtitle),
         img: textOr(rowRecord.img, fallbackCms.img),
         gsheetWebhook: existingWebhook,
-        paymentConfig: mergePaymentConfigRecord(rowRecord.payment_config)
+        paymentConfig: mergePaymentConfigRecord(rowRecord.payment_config),
+        promoBanners: Array.isArray(rowRecord.promo_banners) ? rowRecord.promo_banners : []
     };
 }
 
@@ -512,7 +514,7 @@ async function hydrateSupabaseOrders(sbClient) {
 async function hydrateSupabaseCms(sbClient) {
     const { data: fetchedRows, error: queryErr } = await sbClient
         .from('soulin_cms')
-        .select('id, title, tag, subtitle, img, payment_config')
+        .select('id, title, tag, subtitle, img, payment_config, promo_banners')
         .eq('id', 'main');
     if (queryErr) {
         console.error('Supabase CMS fetch failed:', queryErr);
@@ -935,7 +937,7 @@ function addUrlsToPathSet(urlList, targetSet) {
 async function collectReferencedStoragePaths(sbClient) {
     const [prodQuery, cmsQuery, orderQuery] = await Promise.all([
         sbClient.from('soulin_products').select('img'),
-        sbClient.from('soulin_cms').select('img'),
+        sbClient.from('soulin_cms').select('img, promo_banners'),
         sbClient.from('soulin_orders').select('payment_slip_url')
     ]);
     if (prodQuery.error || cmsQuery.error || orderQuery.error) {
@@ -945,7 +947,11 @@ async function collectReferencedStoragePaths(sbClient) {
     const referencedSet = new Set();
     const stagedState = window.soulinStagedUploads || {};
     addUrlsToPathSet((prodQuery.data || []).map(row => row.img), referencedSet);
-    addUrlsToPathSet((cmsQuery.data || []).map(row => row.img), referencedSet);
+    (cmsQuery.data || []).forEach(row => {
+        addUrlsToPathSet([row.img], referencedSet);
+        const promoUrls = Array.isArray(row.promo_banners) ? row.promo_banners.map(entry => entry && entry.img) : [];
+        addUrlsToPathSet(promoUrls, referencedSet);
+    });
     addUrlsToPathSet((orderQuery.data || []).map(row => row.payment_slip_url), referencedSet);
     addUrlsToPathSet([stagedState.product, stagedState.cms, stagedState.slip], referencedSet);
     return referencedSet;

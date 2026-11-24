@@ -39,6 +39,7 @@
     <script defer src="./js/audit-log.js"></script>
     <script defer src="./js/pdpa.js"></script>
     <script defer src="./js/cms.js"></script>
+    <script defer src="./js/promo-carousel.js"></script>
     <script defer src="./js/order-print.js"></script>
     <script defer src="./js/admin.js"></script>
     <script defer src="./js/supabase-config.js"></script>
@@ -156,6 +157,7 @@
                     <span class="text-xs text-slate-500">ข้อเสนอสุดคุ้มวันนี้</span>
                 </div>
 
+                <div id="promo-carousel-mount" class="hidden"></div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="promotions-grid">
                     <!-- Dynamic Promo Cards -->
                 </div>
@@ -411,7 +413,7 @@
                                 <div class="bg-white/95 rounded-2xl p-4 flex items-center justify-center"><img id="cms-live-preview-img" src="" alt="Live Hero Preview" class="w-36 h-36 object-contain"></div>
                             </div>
                         </div>
-                        <div id="admin-payment-settings-mount" class="mt-6"></div>
+                        <div id="admin-promo-banners-mount" class="mt-6"></div><div id="admin-payment-settings-mount" class="mt-6"></div>
                     </div>
 
                     <!-- Admin Tab 4: Orders Inspection -->
